@@ -1,0 +1,46 @@
+import "google/protobuf/empty.proto";
+syntax = "proto3";
+
+package peerNode;
+
+service PeerNode {
+    rpc viewFiles (google/protobuf/empty.proto) returns (stream File);
+    rpc requestFile (FileID) returns (File);
+    rpc logTransaction (Transaction) returns (Status);
+    rpc sendFile (File) returns (Status);       // producer send file to consumer
+    rpc uploadFile (FileID) returns (Status);   // tell market server that can be producer for this file    
+    rpc checkFile (FileID) returns (Status);
+    rpc connection (PeerID) returns (Status);
+}
+
+message PeerID {
+    string id = 1;
+}
+
+message FileID {
+    string id = 1;
+}
+
+message File {
+    string name = 1;
+    FileID id = 2;
+    int32 year_uploaded = 3;
+    int32 month_uploaded = 4;
+    int32 day_uploaded = 5;
+    bytes content = 6;
+}
+
+message Transaction {
+    string receiver = 1;
+    string sender = 2;
+    FileID id = 3;
+}
+
+message Status {
+    int32 success = 1;
+}
+
+
+
+
+ 
