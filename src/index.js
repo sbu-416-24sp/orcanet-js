@@ -114,7 +114,7 @@ async function main() {
 
         // console.log(evt.detail);
         // Get non 127... multiaddr and convert the object into a string for parsing
-        const nonlocalMultaddr = evt.detail.multiaddrs.filter(addr => !addr.toString().startsWith('/ip4/127.0.0.')).toString();
+        const nonlocalMultaddr = evt.detail.multiaddrs.filter(addr => !addr.toString().startsWith('/ip4/127.0.0.1')).toString();
         // console.log(nonlocalMultaddr);
         // Extract IP address
         const ipAddress = nonlocalMultaddr.split('/')[2];
