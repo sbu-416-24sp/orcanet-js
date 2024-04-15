@@ -7,6 +7,7 @@ import pkg from 'protobufjs';
 const { load, Message } = pkg;
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { fileRequests } from './utils.js'
 
 export async function handleMessage(stream) {
     let receivedData = Buffer.alloc(0); // Initialize an empty buffer to accumulate received data
@@ -80,6 +81,8 @@ export async function handleRequestFile({ stream }) {
         (source) => map(source, (buf) => uint8ArrayToString(buf.subarray())),
         async function (source) {
             for await (var message of source) {
+                const [addr, fileHash] = message.split(' ')
+                fileRequests.push({addr, fileHash})
                 console.log('Requesting: ' + message)
             }
         }

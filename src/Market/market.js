@@ -29,6 +29,7 @@ let target = "127.0.0.1:50052";
 const server = new grpc.Server();
 server.addService(market_proto.Market.service, { RegisterFile: registerFile, CheckHolders: checkHolders });
 server.bindAsync(target, grpc.ServerCredentials.createInsecure(), (error) => {
+    console.log('Market server running on', target)
     // server.start();
 });
 
