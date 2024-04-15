@@ -1,7 +1,28 @@
+// import { fileURLToPath } from 'url';
+// import { dirname } from 'path';
 import { createGrpcClient } from '../Market/market.js'
+// import grpc from '@grpc/grpc-js';
+// import protoLoader from '@grpc/proto-loader';
 import fs from 'fs';
 import * as path from 'path';
+// import 
 
+// // Get the directory name of the current module file
+// const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// // Loading in the proto and market server stuff
+// const PROTO_PATH = __dirname + '/../Market/market.proto';
+// const packageDefinition = protoLoader.loadSync(
+//     PROTO_PATH, {
+//         keepCase: true,
+//         longs: String,
+//         enums: String,
+//         defaults: true,
+//         oneofs: true
+//     });
+// const marketObject = grpc.loadPackageDefinition(packageDefinition).market;
+// market is a stub -> allows us to call the protobuf service methods specified in the market server
+// let target = "127.0.0.1:50051";
 const market = createGrpcClient();
 
 // Can just call Producer.(method they want)
@@ -50,97 +71,6 @@ export class Producer {
                 return true;
             }
         });
-
-        // const keyEncoded = new TextEncoder('utf8').encode(hash);
-        // const userInfo = `${newUser.id}/${newUser.name}/${newUser.ip}/${newUser.port}/${newUser.price}`;
-        // const valueEncoded = new TextEncoder('utf8').encode(userInfo);
-
-        // try {
-        //     console.log(`node Id checking: ${node.peerId}`);
-
-        //     let existingUserStr;
-        //     // const exist = await node.contentRouting.get(keyEncoded);
-        //     const exist = node.services.dht.get(keyEncoded);
-        //     for await (const queryEvent of exist) {
-        //         // Handle each query event
-        //         // console.log('Query event:', queryEvent);
-        //         existingUserStr = new TextDecoder('utf8').decode(queryEvent.value);
-        //     }
-        //     console.log("exist value is "+ existingUserStr);
-
-        //     // const existingUserStr = new TextDecoder('utf8').decode(exist);
-        //     const values = existingUserStr.split('/');
-        //     if (values[0] == '' || values[0] == undefined) {
-        //         console.log("First time to upload the file from if");
-        //         // await node.contentRouting.put(keyEncoded, valueEncoded);
-        //         const putv = node.services.dht.put(keyEncoded, valueEncoded);
-        //         for await (const queryEvent of putv) {
-        //             // Handle each query event
-        //             // console.log('Query event from put(): ', queryEvent);
-        //             const message = new TextDecoder('utf8').decode(queryEvent.value);
-        //             console.log("value of each qeury is ", message);
-        //         }
-        //         callRegisterFile(args);
-        //     }
-
-        //     // Same User
-        //     else {
-        //         console.log("The File already exist");
-        //         console.log(`value: ${values[0]}`);
-        //         console.log(`node Id: ${node.peerId}`);
-        //         if (values[0] == node.peerId) {
-        //             console.log("Same User try to upload existing file");
-        //             if (values[3] == newUser.price) {
-        //                 console.log("You already uploaded same file with the same price");
-        //             }
-        //             else {
-        //                 // change the price in new User. Need to Update User value.
-        //             }
-        //         }
-                
-        //         // Different User
-        //         else {
-        //             const newValue = existingUserStr+"\n"+userInfo;
-        //             const newValueEncoded = new TextEncoder('utf8').encode(newValue);
-        //             // await node.contentRouting.put(keyEncoded, newValueEncoded);
-        //             const putv = node.services.dht.put(keyEncoded, newValueEncoded);
-        //             for await (const queryEvent of putv) {
-        //                 // Handle each query event
-        //                 // console.log('Query event from put(): ', queryEvent);
-        //                 const message = new TextDecoder('utf8').decode(queryEvent.value);
-        //                 console.log("value of each qeury is ", message);
-        //             }
-        //             callRegisterFile(args);
-        //         }
-        //     }
-            
-        // }
-        // catch (error) {
-        //     console.log("First time to upload the file from err");
-        //     // const hi = await node.contentRouting.put(keyEncoded, valueEncoded);
-        //     const putv = node.services.dht.put(keyEncoded, valueEncoded);
-        //     for await (const queryEvent of putv) {
-        //         // Handle each query event
-        //         // console.log('Query event from put(): ', queryEvent);
-        //         const message = new TextDecoder('utf8').decode(queryEvent.value);
-        //         console.log("value of each qeury is ", message);
-        //     }
-        //     callRegisterFile(args);
-        // }
-        // node.services.dht.refreshRoutingTable();
-
-        
-        
-        // const value = node.services.dht.get(keyEncoded);
-        // for await (const queryEvent of value) {
-        //     // Handle each query event
-        //     // console.log('Query event from get():', queryEvent);
-        //     const message = new TextDecoder('utf8').decode(queryEvent.value);
-        //     console.log("value of each qeury is ", message);
-        // }
-
-
-        
     }
 
     /*
