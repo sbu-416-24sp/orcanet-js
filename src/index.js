@@ -8,7 +8,6 @@ import { ping } from '@libp2p/ping' // remove this after done testing
 import { bootstrap } from '@libp2p/bootstrap'
 import { mdns } from '@libp2p/mdns';
 import { gossipsub } from '@chainsafe/libp2p-gossipsub'
-import { floodsub } from '@libp2p/floodsub';
 import { createPeerInfo, getKeyByValue } from './Libp2p/peer-node-info.js'
 import { generateRandomWord, getPublicMultiaddr, bufferedFiles, recievedPayment } from './Libp2p/utils.js'
 import geoip from 'geoip-lite';

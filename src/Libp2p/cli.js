@@ -18,7 +18,7 @@ import geoip from 'geoip-lite';
  */
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-export default function displayMenu(discoveredPeers, node, otherNode) {
+export default function displayMenu(discoveredPeers, node) {
     const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout
@@ -105,7 +105,7 @@ export default function displayMenu(discoveredPeers, node, otherNode) {
                     node.services.pubsub.subscribe('transaction')
                     // node.services.pubsub.subscribe('fruits')
                     // node.services.pubsub.subscribe('animals')
-                    otherNode.services.pubsub.subscribe('transaction')
+
                     console.log(nodes_pubsub_data)
                     const s = node.services.pubsub.getSubscribers('transaction');
                     const t = node.services.pubsub.getTopics()
@@ -115,12 +115,7 @@ export default function displayMenu(discoveredPeers, node, otherNode) {
                         console.log("the broadcaster receives its own message")
                         // console.log(`${message.detail.topic}:`, new TextDecoder().decode(message.detail.data))
                     })
-                    otherNode.services.pubsub.addEventListener('message', (message) => {
-                        console.log("receive new msg")
-                        // console.log(`${message.detail.topic}:`, new TextDecoder().decode(message.detail.data))
-                    })
                     node.services.pubsub.publish('transaction', new TextEncoder().encode('123456789'))
-                    otherNode.services.pubsub.publish('transaction', new TextEncoder().encode('987654321'))
                     .then(() => {
                         console.log('Message published successfully');
                         displayOptions();
