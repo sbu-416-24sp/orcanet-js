@@ -2,7 +2,18 @@ import { createLibp2p } from 'libp2p'
 import { tcp } from '@libp2p/tcp'
 import { yamux } from '@chainsafe/libp2p-yamux'
 import { noise } from '@chainsafe/libp2p-noise'
-import {mdns} from '@libp2p/mdns';
+import { mdns } from '@libp2p/mdns';
+import { gossipsub } from '@chainsafe/libp2p-gossipsub'
+
+const options = {
+    emitSelf: true, // Example: Emit to self on publish
+    gossipIncoming: true, // Example: Automatically gossip incoming messages
+    fallbackToFloodsub: true, // Example: Fallback to floodsub if gossipsub is not supported
+    floodPublish: true, // Example: Send self-published messages to all peers
+    doPX: false, // Example: Enable PX
+    // msgIdFn: (message) => message.from + message.seqno.toString('hex'), // Example: Custom message ID function
+    signMessages: true // Example: Sign outgoing messages
+}
 
 // Function to handle incoming messages for the custom protocol
 const handleCustomProtocolMessage = (peerId, message) => {
@@ -28,14 +39,23 @@ const node = await createLibp2p({
         mdns()
     ],
     services: {
+        pubsub: gossipsub(options),
         dht: kadDHT({
             kBucketSize: 20,
-        }),
+        })
     }
 });
 
 await node.start();
 console.log('node has started:', node.peerId);
+  
+node.services.pubsub.start()
+node.services.pubsub.subscribe('transaction')
+node.services.pubsub.addEventListener('message', (message) => {
+    console.log("Event listener for subscribing works!")
+    console.log(`${message.detail.topic}:`, new TextDecoder().decode(message.detail.data))
+})
+node.services.pubsub.publish('transaction', new TextEncoder().encode('123456789'))
 
 node.addEventListener('peer:connect', (evt) => {
     const peerId = evt.detail;

@@ -69,14 +69,21 @@ import express from 'express';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
-import { requestFileFromProducer } from './app.js';
+import url from 'url';
+import { requestFileFromProducer, payChunk, sendFileToConsumer, registerFile, getProducers } from './app.js';
+import { fileRequests, getPublicMultiaddr } from './utils.js';
+
+const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
+const destinationDirectory = path.join(__dirname, '..', 'testProducerFiles')
+const MAX_CHUNK_SIZE = 63000;
+
 
 export function createHTTPGUI(node) {
     const app = express();
     // Middleware to parse JSON bodies
     app.use(express.json());
 
-    app.get('/requestFileFromProducer/', async (req, res) => {
+    app.post('/requestFileFromProducer/', async (req, res) => {
         let statusCode = 200; 
         let { prodIp, prodPort, prodId, fileHash } = req.body;
         prodIp = String(prodIp);
@@ -89,11 +96,191 @@ export function createHTTPGUI(node) {
         res.status(statusCode).send();
     });
 
-    // to implement:
-        // CLI commands 9, 10, 11, 12, 13
-        // uploadFile,  
+    app.get('/viewFileRequests/', async (req, res) => {
+        let statusCode = 200; 
+        
+        res.status(statusCode).send(fileRequests);
+    });
+
+    //cli command 9
+    app.post('/sendFileToConsumer/', async (req, res) =>{
+        let statusCode = 200;
+        const {addr, fileHash, price} = req.body;
+        try {
+            await sendFileToConsumer(node, addr, fileHash, price);
+        } catch (error) {
+            console.error("Error sending file to consumer:", error);
+            statusCode = 500;
+        }
+        res.status(statusCode).send();
+    });
+
+    //cli command 10
+    app.post('/payChunk', async (req, res) => {
+        let statusCode = 200;
+        const { addr, amount } = req.body;
+        try {
+            await payChunk(node, addr, amount);
+        } catch (error) {
+            console.error("Error paying for chunk:", error);
+            statusCode = 500;
+        }
+        res.status(statusCode).send();
+    });
+
+    //cli command 11
+    app.post('/registerFile', async (req, res) => {
+        let statusCode = 200;
+        const {fileName, username, price} = req.body;
+        const peerId = node.peerId.toString();
+        const publicMulti = await getPublicMultiaddr(node);
+        const parts = publicMulti.split('/')
+        const publicIP = parts[1]
+        const port = parts[3]
+
+        try {
+            await registerFile(fileName, peerId, username, publicIP, port, price);
+        } catch (error) {
+            console.error("Error registering file:", error);
+            statusCode = 500;
+        }
+        res.status(statusCode).send();
+    });
+
+    //cli command 12
+    app.get('/getProducersWithFile', async (req, res) =>{
+        let statusCode = 200;
+        let message = '';
+        const { fileHash } = req.body;
+        try {
+           message = await getProducers(fileHash);
+        } catch (error) {
+            statusCode = 500;
+            message = "Error getting producers with the filehash " + fileHash + ": " + error;
+        }
+
+        res.status(statusCode).send(message);
+    });
+
+    //cli command 13
+    app.get('/hashFile', async (req, res) =>{
+        let statusCode = 200; 
+        let message = '';
+        let { filePath } = req.query;
+
+        if (!fs.existsSync(filePath)) {
+            statusCode = 400;
+            message = 'File not found';
+        } else {
+            const fileContent = fs.readFileSync(filePath);
+            const fileHash = crypto.createHash('sha256').update(fileContent).digest('hex');
+            message = {fileHash};
+        }
+        
+        res.status(statusCode).send(message);
+    });
     
+    app.post('/uploadFile', async (req, res) => {
+        let statusCode = 200; 
+        let message = 'Success';
+        let { filePath } = req.body;
+
+        if (!fs.existsSync(filePath)) {
+            statusCode = 400;
+            message = 'File not found';
+        }
+        const fileName = path.basename(filePath);
+        const destinationPath = path.join(destinationDirectory, fileName);
+        fs.copyFile(filePath, destinationPath, (error) => {
+            if (error) {
+                statusCode = 400;
+                message = 'File copy unsuccessful';
+            }
+        });
+        res.status(statusCode).send(message);
+    });
+
+    app.post('/deleteFile', async (req, res) => {
+        let statusCode = 200; 
+        let message = 'Success';
+        let { filePath } = req.body;
+
+        if (!fs.existsSync(filePath)) {
+            statusCode = 400;
+            message = 'File not found';
+        }
+        // Asynchronously delete the file
+        fs.unlink(filePath, (error) => {
+            if (error) {
+                statusCode = 400;
+                message = 'Error deleting file';
+            }
+        });
+        res.status(statusCode).send(message);
+    });
+    
+    app.get('/getFileInfo', async (req, res) => {
+        let statusCode = 200; 
+        let message = '';
+        let { filePath } = req.query;
+
+        if (!fs.existsSync(filePath)) {
+            statusCode = 400;
+            message = 'File not found';
+        } else {
+            const fileName = path.basename(filePath);
+            const fileStats = fs.statSync(filePath);
+            const fileSize = fileStats.size;
+            const numberChunks =  Math.ceil(fileSize / MAX_CHUNK_SIZE);
+            const fileDate = fileStats.birthtime;
+            const fileContent = fs.readFileSync(filePath);
+            const fileHash = crypto.createHash('sha256').update(fileContent).digest('hex');
+    
+            message = {
+                fileName,
+                filePath,
+                fileDate,
+                fileSize,
+                numberChunks,
+                fileHash
+            };
+        }
+        
+        res.status(statusCode).send(message);
+    });
+
+    app.get('/getProducerFilesInfo', async (req, res) => {
+        let statusCode = 200; 
+        let message = [];
+
+        const files = fs.readdirSync(destinationDirectory);
+        files.forEach(file => {
+            const filePath = path.join(destinationDirectory, file);
+            const fileName = path.basename(filePath);
+            const fileStats = fs.statSync(filePath);
+            const fileSize = fileStats.size;
+            const numberChunks =  Math.ceil(fileSize / MAX_CHUNK_SIZE);
+            const fileDate = fileStats.birthtime;
+            const fileContent = fs.readFileSync(filePath);
+            const fileHash = crypto.createHash('sha256').update(fileContent).digest('hex');
+    
+            message.push({
+                fileName,
+                filePath,
+                fileDate,
+                fileSize,
+                numberChunks,
+                fileHash
+            })
+        })
+        res.status(statusCode).send(message);
+    })
+
+
+    //cli command 10
+
+
     const server = app.listen()
-    console.log(`Server is running on port ${server.address().port}`);
+    console.log(`HTTP GUI API is running on port ${server.address().port}`);
     return server;
 }
