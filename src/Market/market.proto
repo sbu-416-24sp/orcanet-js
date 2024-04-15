@@ -3,7 +3,7 @@ syntax = "proto3";
 
 import "google/protobuf/empty.proto";
 
-option go_package = "orcanet-market-js/market/market";
+option go_package = "orcanet/market";
 
 package market;
 

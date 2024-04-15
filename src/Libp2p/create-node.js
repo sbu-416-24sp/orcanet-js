@@ -26,7 +26,12 @@ const node = await createLibp2p({
     ],
     peerDiscovery: [
         mdns()
-    ]
+    ],
+    services: {
+        dht: kadDHT({
+            kBucketSize: 20,
+        }),
+    }
 });
 
 await node.start();

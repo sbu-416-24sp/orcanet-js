@@ -3,6 +3,7 @@ import connectToGUI from './gui-connection.js';
 import { multiaddr } from 'multiaddr'
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { getNode } from '../Market/market.js';
 import { Producer } from '../Producer_Consumer/producer.js';
 import { Consumer } from '../Producer_Consumer/consumer.js';
 import { requestFileFromProducer, sendFileToConsumer, payChunk, hashFile } from './app.js';
@@ -176,6 +177,7 @@ export default function displayMenu(discoveredPeers, node) {
                         let [_, username, publicIP, port, price, hash] = command.split(' '); // Split input by space
                         price = parseInt(price);
                         port = parseInt(port);
+                        getNode(node);
                         Producer.registerFile(hash, node.peerId.toString(), username, publicIP, port, price);
                         displayOptions();
                     })
@@ -183,6 +185,7 @@ export default function displayMenu(discoveredPeers, node) {
                 case '12':
                     rl.question("Format: viewProducers [hash]\n", async (command) => {
                         let [_, hash] = command.split(' '); // Split input by space
+                        getNode(node);
                         Consumer.viewProducers(hash);
                         displayOptions();
                     })

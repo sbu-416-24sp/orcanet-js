@@ -1,4 +1,4 @@
-import displayMenu from "./libp2p/cli.js"
+import displayMenu from "./Libp2p/cli.js"
 import { createLibp2p } from 'libp2p'
 import { tcp } from '@libp2p/tcp'
 import { noise } from '@chainsafe/libp2p-noise'
@@ -8,11 +8,11 @@ import { ping } from '@libp2p/ping' // remove this after done testing
 import { bootstrap } from '@libp2p/bootstrap'
 import {mdns} from '@libp2p/mdns';
 import { createPeerInfo, getKeyByValue } from './libp2p/peer-node-info.js'
-import { generateRandomWord, getPublicMultiaddr, bufferedFiles, recievedPayment } from './libp2p/utils.js'
+import { generateRandomWord, getPublicMultiaddr, bufferedFiles, recievedPayment } from './Libp2p/utils.js'
 import geoip from 'geoip-lite';
-import { handleRequestFile, handleDownloadFile, payForChunk, handlePayForChunk } from "./libp2p/protocol.js"
+import { handleRequestFile, handleDownloadFile, payForChunk, handlePayForChunk } from "./Libp2p/protocol.js"
 import {EventEmitter} from 'node:events';
-import { createHTTPGUI } from "./libp2p/gui-connection.js"
+import { createHTTPGUI } from "./Libp2p/gui-connection.js"
 
 class Emitter extends EventEmitter {}
 
@@ -70,7 +70,12 @@ async function main() {
         ],
         peerDiscovery: [
             mdns()
-        ]
+        ],
+        services: {
+            dht: kadDHT({
+                kBucketSize: 20,
+            }),
+        }
     });
 
     await test_node2.start();
