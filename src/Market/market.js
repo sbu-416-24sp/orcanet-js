@@ -15,8 +15,16 @@ const packageDefinition = protoLoader.loadSync(
     }
 );
 
+let node;
+const getNode = (n) => {
+    node = n;
+    console.log(node.peerId);
+}
+
 var market_proto = grpc.loadPackageDefinition(packageDefinition).market;
-let target = "127.0.0.1:50051";
+
+
+let target = "127.0.0.1:50052";
 
 const server = new grpc.Server();
 server.addService(market_proto.Market.service, { RegisterFile: registerFile, CheckHolders: checkHolders });
@@ -24,12 +32,6 @@ server.bindAsync(target, grpc.ServerCredentials.createInsecure(), (error) => {
     console.log('Market server running on', target)
     // server.start();
 });
-
-let node;
-const getNode = (n) => {
-    node = n;
-    console.log(node.peerId);
-}
 
 
 // ######## Registerfile Function #########
@@ -43,7 +45,8 @@ async function registerFile(call, callback) {
     const valueEncoded = new TextEncoder('utf8').encode(userInfo);
 
     try {
-        console.log(`node Id checking: ${node.peerId}`);
+        // console.log(`node Id checking: ${node.peerId}`);
+        console.log(`node Id checking: ${newUser.id}`);
 
         let existingUserStr;
         const exist = node.services.dht.get(keyEncoded);
@@ -54,7 +57,7 @@ async function registerFile(call, callback) {
         const curValue = existingUserStr.split('\n');
         
         for (let i = 0; i < curValue.length; i++) {
-            const values = curValue[i].split('/');
+            const values = curValue[i].split('/'); // [newUser.id, newUser.name, newUser.ip, newUser.port, newUser.price]
 
              // First time to register file
             if (values[0] == '' || values[0] == undefined) {
@@ -71,10 +74,13 @@ async function registerFile(call, callback) {
             else {
                 console.log("The File already exist");
                 console.log(`value: ${values[0]}`);
-                console.log(`node Id: ${node.peerId}`);
+                // console.log(`node Id: ${node.peerId}`);
+                console.log(`node Id: ${newUser.id}`);
 
                 // Same User
-                if (values[0] == node.peerId) {
+                // if (values[0] == node.peerId)
+                if (values[0] == newUser.id) 
+                {
                     console.log("Same User try to upload existing file");
                     if (values[4] == newUser.price) {
                         console.log("You already uploaded same file with the same price");
@@ -82,13 +88,21 @@ async function registerFile(call, callback) {
                     }
                     else {
                         // change the price in new User. Need to Update User value.
+                        console.log("Price is changed");
                         values[4] = newUser.price;
                         curValue[i] = values.toString().replaceAll(',', '/');
                         existingUserStr = curValue.toString().replaceAll(',', '\n');
+                        const newValueEncoded = new TextEncoder('utf8').encode(existingUserStr);
+
+
+                        const putv = node.services.dht.put(keyEncoded, newValueEncoded);
+                        for await (const queryEvent of putv) {
+                            const message = new TextDecoder('utf8').decode(queryEvent.value);
+                            console.log("value of each qeury is ", message);
+                        }
                         break;
                     }
                 }
-                
                 // Different User
                 else {
                     const newValue = existingUserStr+"\n"+userInfo;
