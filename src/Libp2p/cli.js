@@ -6,10 +6,11 @@ import { fileURLToPath } from 'url';
 import { getNode } from '../Market/market.js';
 import { Producer } from '../Producer_Consumer/producer.js';
 import { Consumer } from '../Producer_Consumer/consumer.js';
-import { requestFileFromProducer, sendFileToConsumer, payChunk, hashFile } from './app.js';
+import { hashFile } from './app.js';
 import { createPeerInfo } from './peer-node-info.js';
 import { generateRandomWord } from './utils.js';
 import geoip from 'geoip-lite';
+import { sendRequestFile, sendRequestTransaction } from '../Producer_Consumer/http_client.js';
 
 /**
  * TODO:
@@ -35,7 +36,6 @@ export default function displayMenu(discoveredPeers, node) {
         console.log("6. Connect to a public peer");
         console.log("7. Send Message");
         console.log("8. Request file");
-        console.log("9. Send file");
         console.log("10. Pay for chunk");
         console.log("11. Register file to market");
         console.log("12. Get producers of file");
@@ -177,24 +177,16 @@ export default function displayMenu(discoveredPeers, node) {
                     });
                     break;
                 case '8':
-                    rl.question("Format: request [prodIp] [prodPort] [prodId] [fileHash]\n", async (command) => {
-                        const [_, prodIp, prodPort, prodId, fileHash] = command.split(' '); // Split input by space
-                        requestFileFromProducer(node, prodIp, prodPort, prodId, fileHash);
-                        displayOptions();
-                    })
-                    break;
-                case '9':
-                    rl.question("Format: send [consumer_multiaddr] [fileHash] [price]\n", async (command) => {
-                        let [_, addr, fileHash, price] = command.split(' '); // Split input by space
-                        price = parseInt(price);
-                        sendFileToConsumer(node, addr, fileHash, price)
+                    rl.question("Format: request [prodIp] [prodPort] [fileHash]\n", async (command) => {
+                        const [_, prodIp, prodPort, fileHash] = command.split(' '); // Split input by space
+                        sendRequestFile(node.peerId.toString(), prodIp, prodPort, fileHash);
                         displayOptions();
                     })
                     break;
                 case '10':
-                    rl.question("Format: pay [addr] [amount]\n", async (command) => {
-                        let [_, addr, amount] = command.split(' '); // Split input by space
-                        payChunk(node, addr, amount)
+                    rl.question("Format: pay [prodIp] [prodPort] [fileHash] [amount]\n", async (command) => {
+                        let [_, prodIp, prodPort, fileHash, amount] = command.split(' '); // Split input by space
+                        sendRequestTransaction(node.peerId.toString(), prodIp, prodPort, fileHash, amount)
                         displayOptions();
                     })
                     break;

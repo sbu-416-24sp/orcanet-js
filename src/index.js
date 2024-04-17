@@ -11,11 +11,10 @@ import { gossipsub } from '@chainsafe/libp2p-gossipsub'
 import { createPeerInfo, getKeyByValue } from './Libp2p/peer-node-info.js'
 import { generateRandomWord, getPublicMultiaddr, bufferedFiles, recievedPayment } from './Libp2p/utils.js'
 import geoip from 'geoip-lite';
-import { handleRequestFile, handleDownloadFile, payForChunk, handlePayForChunk } from "./Libp2p/protocol.js"
-import {EventEmitter} from 'node:events';
 import { createHTTPGUI } from "./Libp2p/gui-connection.js"
-
-class Emitter extends EventEmitter {}
+import { app } from "./Producer_Consumer/http_server.js"
+import http from 'http'
+import { getNode } from "./Market/market.js"
 
 const options = {
     emitSelf: true, // Example: Emit to self on publish
@@ -27,8 +26,16 @@ const options = {
     signMessages: true // Example: Sign outgoing messages
 }
 
+const HTTPServerPort = 3000;
+
 // export { test_node2, test_node }
 async function main() {
+    // Start the HTTP server (files)
+    const server = http.createServer(app);
+    server.listen(HTTPServerPort);
+    server.on('error', (error) => {server.listen(0);});
+    server.on('listening', () => console.log(`HTTP Server is running on port ${server.address().port}`))
+
     // displayMenu(null, test_node)
 
     // libp2p node logic
@@ -191,19 +198,8 @@ async function main() {
     test_node2.getMultiaddrs().forEach((addr) => {
         console.log(addr.toString())
     })
-    
 
-    // Set up protocols
-    const emitter = new Emitter();
-    emitter.on('receivedChunk', async (price, producerMA) => {
-        try {
-            const stream = await test_node2.dialProtocol(producerMA, '/fileExchange/1.0.2');
-            await payForChunk(stream, price);
-        } catch (err) {console.log(err)}
-    }) 
-    test_node2.handle('/fileExchange/1.0.0', handleRequestFile);
-    test_node2.handle('/fileExchange/1.0.1', ({ connection, stream }) => handleDownloadFile(stream, connection, bufferedFiles, emitter))
-    test_node2.handle('/fileExchange/1.0.2',({ connection, stream }) => handlePayForChunk(connection, stream, recievedPayment))
+    getNode(test_node2);
     
     const stop = async (node) => {
         // stop libp2p

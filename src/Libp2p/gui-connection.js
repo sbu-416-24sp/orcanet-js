@@ -70,12 +70,13 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import url from 'url';
-import { requestFileFromProducer, payChunk, sendFileToConsumer, registerFile, getProducers } from './app.js';
-import { fileRequests, getPublicMultiaddr } from './utils.js';
+import { registerFile, getProducers } from './app.js';
+import { MAX_CHUNK_SIZE, fileRequests, getPublicMultiaddr } from './utils.js';
+import { sendRequestFile, sendRequestTransaction } from '../Producer_Consumer/http_client.js';
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 const destinationDirectory = path.join(__dirname, '..', 'testProducerFiles')
-const MAX_CHUNK_SIZE = 63000;
+
 
 
 export function createHTTPGUI(node) {
@@ -85,15 +86,13 @@ export function createHTTPGUI(node) {
 
     app.post('/requestFileFromProducer/', async (req, res) => {
         let statusCode = 200; 
-        let { prodIp, prodPort, prodId, fileHash } = req.body;
+        let { prodIp, prodPort, fileHash } = req.body;
         prodIp = String(prodIp);
         prodPort = String(prodPort);
-        prodId = String(prodId);
         fileHash = String(fileHash);
 
-        const ret = await requestFileFromProducer(node, prodIp, prodPort, prodId, fileHash)
-        if (!ret) {statusCode = 400;}
-        res.status(statusCode).send();
+        sendRequestFile(node.peerId.toString(), prodIp, prodPort, fileHash);
+        res.status(statusCode).send('Download in progress');
     });
 
     app.get('/viewFileRequests/', async (req, res) => {
@@ -102,30 +101,12 @@ export function createHTTPGUI(node) {
         res.status(statusCode).send(fileRequests);
     });
 
-    //cli command 9
-    app.post('/sendFileToConsumer/', async (req, res) =>{
-        let statusCode = 200;
-        const {addr, fileHash, price} = req.body;
-        try {
-            await sendFileToConsumer(node, addr, fileHash, price);
-        } catch (error) {
-            console.error("Error sending file to consumer:", error);
-            statusCode = 500;
-        }
-        res.status(statusCode).send();
-    });
-
     //cli command 10
     app.post('/payChunk', async (req, res) => {
         let statusCode = 200;
-        const { addr, amount } = req.body;
-        try {
-            await payChunk(node, addr, amount);
-        } catch (error) {
-            console.error("Error paying for chunk:", error);
-            statusCode = 500;
-        }
-        res.status(statusCode).send();
+        const { prodIp, prodPort, fileHash, amount } = req.body;
+        sendRequestTransaction(node.peerId.toString(), prodIp, prodPort, fileHash, amount)
+        res.status(statusCode).send('Payment in progress');
     });
 
     //cli command 11

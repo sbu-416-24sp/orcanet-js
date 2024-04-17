@@ -106,7 +106,6 @@ HTTP API
 { 
     "prodIp": "10.0.0.4", 
     "prodPort": 55444, 
-    "prodId": "12D3KooWPQsCtFG81RVGHgzBC169iczzGEL9aJCtPdKctTY5H3sJ", 
     "fileHash": "3e81a66c7a0b3f61cf9956abcc07dcee4c5f7f8db46041cafcc6b818975ca128"
 }
 ```
@@ -123,21 +122,14 @@ HTTP API
 ]
 ```
 
-* POST /sendFileToConsumer
-```javascript
-// Request Body JSON
-{ 
-    "addr": "/ip4/192.168.56.1/tcp/56026/p2p/12D3KooWAcL1ksq7tTANRouCeEiETzNcptMPDx9J3bXBZnSawfLj", 
-    "fileHash": "3e81a66c7a0b3f61cf9956abcc07dcee4c5f7f8db46041cafcc6b818975ca128",
-    "price": 2
-}
-```
 
 * POST /payChunk
 ```javascript
 // Request Body JSON
 { 
-    "addr": "/ip4/192.168.56.1/tcp/56026/p2p/12D3KooWAcL1ksq7tTANRouCeEiETzNcptMPDx9J3bXBZnSawfLj", 
+    "prodIp": "10.0.0.4", 
+    "prodPort": 55444, 
+    "fileHash": "3e81a66c7a0b3f61cf9956abcc07dcee4c5f7f8db46041cafcc6b818975ca128"
     "amount": 2
 }
 ```
