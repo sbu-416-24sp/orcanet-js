@@ -91,12 +91,13 @@ async function main() {
         peerDiscovery: [
             mdns(),
             // Bootstrap nodes are initialized as entrypoints into the peer node network
-            // bootstrap({
-            //     list: [
-            //         // bootstrap node here is generated from dig command
-            //         '/dnsaddr/sg1.bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt'
-            //     ]
-            // })
+            bootstrap({
+                list: [
+                    // bootstrap node here is generated from dig command
+                    '/dnsaddr/sg1.bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt'
+                    // '/ip4/172.174.239.70/tcp/62525/p2p/12D3KooWLpSX6gvBHcDs1qyBckj5bvV3dNR5Jdbm9NtDCap85GiV'
+                ]
+            })
         ],
         services: {
             pubsub: gossipsub(options),
