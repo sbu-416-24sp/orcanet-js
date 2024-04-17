@@ -115,7 +115,12 @@ app.get('/sendTransaction', (req, res) => {
   const amount = parseFloat(req.query.amount);
 
   payments += 1;
-  consumerPayment[consumerID][fileHash] = true
+  if (!consumerPayment.hasOwnProperty(consumerID)) {
+    consumerPayment[consumerID] = {}
+  }
+  if (!consumerPayment[consumerID].hasOwnProperty(fileHash)) {
+    consumerPayment[consumerID][fileHash] = true;
+  }
   console.log('Recieved:', amount, 'from', consumerID)
   res.setHeader('Connection', 'close');
   res.end();

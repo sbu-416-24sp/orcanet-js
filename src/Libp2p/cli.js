@@ -185,7 +185,7 @@ export default function displayMenu(discoveredPeers, node) {
                     break;
                 case '10':
                     rl.question("Format: pay [prodIp] [prodPort] [fileHash] [amount]\n", async (command) => {
-                        let [_, addr, prodIp, prodPort, fileHash, amount] = command.split(' '); // Split input by space
+                        let [_, prodIp, prodPort, fileHash, amount] = command.split(' '); // Split input by space
                         sendRequestTransaction(node.peerId.toString(), prodIp, prodPort, fileHash, amount)
                         displayOptions();
                     })
