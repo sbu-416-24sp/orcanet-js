@@ -118,9 +118,7 @@ app.get('/sendTransaction', (req, res) => {
   if (!consumerPayment.hasOwnProperty(consumerID)) {
     consumerPayment[consumerID] = {}
   }
-  if (!consumerPayment[consumerID].hasOwnProperty(fileHash)) {
-    consumerPayment[consumerID][fileHash] = true;
-  }
+  consumerPayment[consumerID][fileHash] = true;
   console.log('Recieved:', amount, 'from', consumerID)
   res.setHeader('Connection', 'close');
   res.end();

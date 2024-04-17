@@ -12,6 +12,7 @@ const consumerFilesPath = path.join(__dirname, '..', 'testConsumerFiles');
 let pay = 0
 
 export async function sendRequestFile(peerId, prodIp, prodPort, fileHash) {
+    if (!fs.existsSync(consumerFilesPath)) {fs.mkdirSync(consumerFilesPath);}
     const requestURL = `http://${prodIp}:${prodPort}/requestFile?fileHash=${fileHash}&peerID=${peerId}`;
 
     try {
