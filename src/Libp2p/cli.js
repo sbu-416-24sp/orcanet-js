@@ -1,12 +1,12 @@
 import readline from 'readline';
-import connectToGUI from './gui-connection.js';
+import connectToGUI from './gui-api.js';
 import { multiaddr } from 'multiaddr'
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { getNode } from '../Market/market.js';
 import { Producer } from '../Producer_Consumer/producer.js';
 import { Consumer } from '../Producer_Consumer/consumer.js';
-import { hashFile } from './app.js';
+import { hashFile } from './async-wrapper.js';
 import { createPeerInfo } from './peer-node-info.js';
 import { generateRandomWord } from './utils.js';
 import geoip from 'geoip-lite';

@@ -11,7 +11,7 @@ import { gossipsub } from '@chainsafe/libp2p-gossipsub'
 import { createPeerInfo, getKeyByValue } from './Libp2p/peer-node-info.js'
 import { generateRandomWord, getPublicMultiaddr, bufferedFiles, recievedPayment } from './Libp2p/utils.js'
 import geoip from 'geoip-lite';
-import { createHTTPGUI } from "./Libp2p/gui-connection.js"
+import { createHTTPGUI } from "./Libp2p/gui-api.js"
 import { app } from "./Producer_Consumer/http_server.js"
 import http from 'http'
 import { getNode } from "./Market/market.js"

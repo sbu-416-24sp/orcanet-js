@@ -70,7 +70,7 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import url from 'url';
-import { registerFile, getProducers } from './app.js';
+import { registerFile, getProducers } from './async-wrapper.js';
 import { MAX_CHUNK_SIZE, fileRequests, getPublicMultiaddr } from './utils.js';
 import { sendRequestFile, sendRequestTransaction } from '../Producer_Consumer/http_client.js';
 
