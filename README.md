@@ -1,13 +1,10 @@
-# Orcacoin Peer Node JS
+# Orcanet-JS
 
 ## How to call/run
-```npm install```  
-In your script file, add these lines and then you can call our methods with producer.METHOD or consumer.METHOD.
 ```
-const producer = require('../Producer/producer.js').Producer;
-const consumer = require('../Consumer/consumer.js').Consumer;
-producer.registerFile("abc", 2, 3, 4, 5, 6);
-consumer.viewProducers("abc");
+cd src
+npm install
+node index.js
 ```
 
 ## Consumer Methods
