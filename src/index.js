@@ -16,7 +16,7 @@ import http from 'http';
 import displayMenu from "./Libp2p/cli.js";
 import { createPeerInfo, getKeyByValue } from './Libp2p/peer-node-info.js';
 import { generateRandomWord, getPublicMultiaddr, bufferedFiles, recievedPayment } from './Libp2p/utils.js';
-import { createHTTPGUI } from "./API/api.js";
+import { createAPI } from "./API/api.js";
 import { app } from "./Producer_Consumer/http_server.js";
 import { getNode } from "./Market/market.js";
 
@@ -213,7 +213,7 @@ async function main() {
     }
     process.on('SIGTERM', () => stop(test_node2))
     process.on('SIGINT', () => stop(test_node2))
-    createHTTPGUI(test_node2);
+    createAPI(test_node2);
 
     displayMenu(discoveredPeers, test_node2, test_node);
 }

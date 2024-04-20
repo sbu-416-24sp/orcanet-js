@@ -1,23 +1,9 @@
-// Libraries
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-import * as fs from 'node:fs';
-import crypto from 'crypto';
-
 // Source functions
 import { Producer } from '../../Producer_Consumer/producer.js';
 import { Consumer } from '../../Producer_Consumer/consumer.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const producerFilesPath = join(__dirname, '../..', 'testProducerFiles');
-
-
-export function hashFile(fileName) {
-    const filePath = join(producerFilesPath, fileName);
-    const fileContent = fs.readFileSync(filePath);
-    const fileHash = crypto.createHash('sha256').update(fileContent).digest('hex');
-    console.log('Filehash: ', fileHash);
-}
+// Helper functions
+import { hashFile } from '../../Libp2p/utils.js';
 
 export async function registerFile(fileName, uId, uName, uIp, uPort, price){
     const fileHash = hashFile(fileName);

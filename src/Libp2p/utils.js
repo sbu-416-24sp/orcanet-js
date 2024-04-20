@@ -1,4 +1,19 @@
 import https from 'https';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+import * as fs from 'node:fs';
+import crypto from 'crypto';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const producerFilesPath = join(__dirname, '../', 'testProducerFiles');
+
+
+export function hashFile(fileName) {
+    const filePath = join(producerFilesPath, fileName);
+    const fileContent = fs.readFileSync(filePath);
+    const fileHash = crypto.createHash('sha256').update(fileContent).digest('hex');
+    console.log('Filehash: ', fileHash);
+}
 
 export function generateRandomWord() {
     const letters = 'abcdefghijklmnopqrstuvwxyz';
