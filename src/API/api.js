@@ -34,7 +34,7 @@ export function createAPI(node) {
     // Middleware to parse JSON bodies
     app.use(express.json());
 
-    // Router routes
+    // Routers
     app.use(home);
     app.use(market);
     app.use(peer);

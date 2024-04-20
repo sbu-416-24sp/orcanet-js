@@ -1,18 +1,26 @@
-import sqlite3 from "sqlite3";
+import { openDB, closeDB, runCommand } from './db_utils.js';
 
-import { runCommands } from './db_utils.js';
+// Creates the settings table if it doesn't exist
+export async function createSettingsTable() {
+    try {
+        let db = await openDB();
 
-export async function create_table() {
-    const commands = [];
-    commands.push("");
+        const command = `
+        CREATE TABLE IF NOT EXISTS settings (
+            theme TEXT,
+            saveLocation TEXT
+        );
+        `
+        await runCommand(db, command.trim());
 
-    return await runCommands(commands);
+        await closeDB(db);
+    } catch (err) {
+        throw err;
+    }
 }
 
 try {
-    let a = await create_table();
-    console.log(a);
-}
-catch (err) {
+    await createSettingsTable();
+} catch (err) {
     console.log(err);
 }
