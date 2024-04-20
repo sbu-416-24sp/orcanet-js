@@ -1,5 +1,3 @@
-import { recievedPayment, getPublicMultiaddr } from './utils.js';
-import { multiaddr } from 'multiaddr'
 import { Consumer } from '../Producer_Consumer/consumer.js';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';

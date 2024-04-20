@@ -65,22 +65,43 @@ export default function connectToGUI() {
 // check the hash in request against the files we are serving
 // send a response back with the file
 
+// Libraries
 import express from 'express';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import url from 'url';
-import { registerFile, getProducers } from './async-wrapper.js';
-import { MAX_CHUNK_SIZE, fileRequests, getPublicMultiaddr } from './utils.js';
+
+// Route imports
+import home from './Routes/home_page.js';
+import market from "./Routes/market_page.js";
+import peer from "./Routes/peer_page.js";
+import settings from "./Routes/settings_page.js";
+import mining from "./Routes/Manta/mining_page.js";
+import stats from "./Routes/Manta/stats_page.js";
+import wallet from "./Routes/Manta/wallet_page.js";
+
+import { registerFile, getProducers } from './producer_consumer_wrapper.js';
+import { MAX_CHUNK_SIZE, fileRequests, getPublicMultiaddr } from '../Libp2p/utils.js';
 import { sendRequestFile, sendRequestTransaction } from '../Producer_Consumer/http_client.js';
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 const destinationDirectory = path.join(__dirname, '..', 'testProducerFiles')
 
-
-
 export function createHTTPGUI(node) {
+    
     const app = express();
+
+    // Router routes
+    app.use(home);
+    app.use(market);
+    app.use(peer);
+    app.use(settings);
+    app.use(mining);
+    app.use(stats);
+    app.use(wallet);
+
+
     // Middleware to parse JSON bodies
     app.use(express.json());
 
@@ -101,7 +122,6 @@ export function createHTTPGUI(node) {
         res.status(statusCode).send(fileRequests);
     });
 
-    //cli command 10
     app.post('/payChunk', async (req, res) => {
         let statusCode = 200;
         const { prodIp, prodPort, fileHash, amount } = req.body;
@@ -109,7 +129,6 @@ export function createHTTPGUI(node) {
         res.status(statusCode).send('Payment in progress');
     });
 
-    //cli command 11
     app.post('/registerFile', async (req, res) => {
         let statusCode = 200;
         const {fileName, username, price} = req.body;
@@ -128,8 +147,7 @@ export function createHTTPGUI(node) {
         res.status(statusCode).send();
     });
 
-    //cli command 12
-    app.get('/getProducersWithFile', async (req, res) =>{
+    app.get('/getProducersWithFile', async (req, res) => {
         let statusCode = 200;
         let message = '';
         const { fileHash } = req.body;
