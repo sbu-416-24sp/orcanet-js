@@ -1,9 +1,12 @@
-import { Consumer } from '../Producer_Consumer/consumer.js';
+// Libraries
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import * as fs from 'node:fs';
 import crypto from 'crypto';
+
+// My imports
 import { Producer } from '../Producer_Consumer/producer.js';
+import { Consumer } from '../Producer_Consumer/consumer.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const producerFilesPath = join(__dirname, '..', 'testProducerFiles');

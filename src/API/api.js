@@ -81,7 +81,7 @@ import mining from "./Routes/Manta/mining_page.js";
 import stats from "./Routes/Manta/stats_page.js";
 import wallet from "./Routes/Manta/wallet_page.js";
 
-import { registerFile, getProducers } from './producer_consumer_wrapper.js';
+import { registerFile, getProducers } from './producer_consumer.js';
 import { MAX_CHUNK_SIZE, fileRequests, getPublicMultiaddr } from '../Libp2p/utils.js';
 import { sendRequestFile, sendRequestTransaction } from '../Producer_Consumer/http_client.js';
 
@@ -100,7 +100,6 @@ export function createHTTPGUI(node) {
     app.use(mining);
     app.use(stats);
     app.use(wallet);
-
 
     // Middleware to parse JSON bodies
     app.use(express.json());
