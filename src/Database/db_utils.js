@@ -1,9 +1,5 @@
 import sqlite3 from "sqlite3";
 
-let openFailMessage = "Database couldn't be opened.";
-let closeFailMessage = "Database couldn't be closed.";
-export { openFailMessage, closeFailMessage };
-
 function openCall() {
     return new Promise((resolve, reject) => {
         let db = new sqlite3.Database('./storage.db', (err) => {
@@ -19,9 +15,8 @@ export async function openDB() {
         console.log(name, ': Connected to the storage database.');
         return db;
     }
-    catch (error) {
-        console.error(name, ': ', error);
-        return false;
+    catch (err) {
+        throw new Error(err);
     }
 }
 
@@ -33,7 +28,7 @@ function closeCall(db) {
         });
     });
 }
-export async function closeDB(db) {
+async function closeDB(db) {
     let name = 'closeDB';
     if (db === false) {
         console.error(name, ": Database object doesn't exist.");
@@ -45,9 +40,8 @@ export async function closeDB(db) {
             console.log(name, ': Closed connection to the storage database.');
             return true;
         }
-        catch (error) {
-            console.error(name, ': ', error);
-            return false;
+        catch (err) {
+            throw new Error(err);
         }
     }
 }
@@ -60,7 +54,7 @@ function runCall(db, command) {
         });
     });
 }
-export async function runDB(db, command) {
+async function runDB(db, command) {
     let name = 'runDB';
     if (db === false) {
         console.error(name, ": Database object doesn't exist.");
@@ -72,9 +66,37 @@ export async function runDB(db, command) {
             console.log(name, ': Ran command -> .', command);
             return true;
         }
-        catch (error) {
-            console.error(name, ': ', error);
-            return false;
+        catch (err) {
+            throw new Error(err);
         }
     }
+}
+
+// Given a list of SQL commands, run each in order
+export async function runCommands(commands) {
+    let db;
+    try {
+        db = await openDB();
+    }
+    catch (err) {
+        throw new Error(err);
+    }
+
+    for (const c in commands) {
+        try {
+            await runDB(db, c);
+        }
+        catch (err) {
+            throw new Error(err);
+        }
+    }
+
+    try {
+        await closeDB(db);
+    }
+    catch (err) {
+        throw new Error(err);
+    }
+
+    return true;
 }
