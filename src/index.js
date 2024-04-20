@@ -1,20 +1,24 @@
-import displayMenu from "./Libp2p/cli.js"
-import { createLibp2p } from 'libp2p'
-import { tcp } from '@libp2p/tcp'
-import { noise } from '@chainsafe/libp2p-noise'
-import { kadDHT } from '@libp2p/kad-dht'
-import { yamux } from '@chainsafe/libp2p-yamux'
-import { ping } from '@libp2p/ping' // remove this after done testing
-import { bootstrap } from '@libp2p/bootstrap'
+// Libraries
+import { createLibp2p } from 'libp2p';
+import { tcp } from '@libp2p/tcp';
+import { noise } from '@chainsafe/libp2p-noise';
+import { kadDHT } from '@libp2p/kad-dht';
+import { yamux } from '@chainsafe/libp2p-yamux';
+import { ping } from '@libp2p/ping'; // remove this after done testing
+import { bootstrap } from '@libp2p/bootstrap';
 import { mdns } from '@libp2p/mdns';
-import { gossipsub } from '@chainsafe/libp2p-gossipsub'
-import { createPeerInfo, getKeyByValue } from './Libp2p/peer-node-info.js'
-import { generateRandomWord, getPublicMultiaddr, bufferedFiles, recievedPayment } from './Libp2p/utils.js'
+import { gossipsub } from '@chainsafe/libp2p-gossipsub';
 import geoip from 'geoip-lite';
-import { createHTTPGUI } from "./Libp2p/gui-connection.js"
-import { app } from "./Producer_Consumer/http_server.js"
-import http from 'http'
-import { getNode } from "./Market/market.js"
+import http from 'http';
+
+
+// Our functions
+import displayMenu from "./Libp2p/cli.js";
+import { createPeerInfo, getKeyByValue } from './Libp2p/peer-node-info.js';
+import { generateRandomWord, getPublicMultiaddr, bufferedFiles, recievedPayment } from './Libp2p/utils.js';
+import { createAPI } from "./API/api.js";
+import { app } from "./Producer_Consumer/http_server.js";
+import { getNode } from "./Market/market.js";
 
 const options = {
     emitSelf: true, // Example: Emit to self on publish
@@ -210,7 +214,7 @@ async function main() {
     }
     process.on('SIGTERM', () => stop(test_node2))
     process.on('SIGINT', () => stop(test_node2))
-    createHTTPGUI(test_node2);
+    createAPI(test_node2);
 
     displayMenu(discoveredPeers, test_node2, test_node);
 }
