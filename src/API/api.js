@@ -81,7 +81,7 @@ import mining from "./Routes/Manta/mining_page.js";
 import stats from "./Routes/Manta/stats_page.js";
 import wallet from "./Routes/Manta/wallet_page.js";
 
-import { registerFile, getProducers } from './producer_consumer.js';
+import { registerFile, getProducers } from './Wrappers/producer_consumer.js';
 import { MAX_CHUNK_SIZE, fileRequests, getPublicMultiaddr } from '../Libp2p/utils.js';
 import { sendRequestFile, sendRequestTransaction } from '../Producer_Consumer/http_client.js';
 
@@ -273,10 +273,6 @@ export function createHTTPGUI(node) {
         })
         res.status(statusCode).send(message);
     })
-
-
-    //cli command 10
-
 
     const server = app.listen()
     console.log(`HTTP GUI API is running on port ${server.address().port}`);
