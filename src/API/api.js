@@ -34,6 +34,12 @@ export function createAPI(node) {
     // Middleware to parse JSON bodies
     app.use(express.json());
 
+    // Custom middleware to attach 'node' variable to the request object
+    app.use((req, res, next) => {
+        req.node = node;
+        next();
+    });
+
     // Routers
     app.use(home);
     app.use(market);
