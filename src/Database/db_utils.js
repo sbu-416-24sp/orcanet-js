@@ -8,10 +8,10 @@ function openCall() {
         });
     });
 }
-export async function openDB() {
+async function openDB() {
     try {
         let db = await openCall();
-        console.log('Connected to the storage database.');
+        console.log('Connected to the storage database.\n');
         return db;
     } catch (err) {
         throw new Error(err);
@@ -26,10 +26,10 @@ function closeCall(db) {
         });
     });
 }
-export async function closeDB(db) {
+async function closeDB(db) {
     try {
         await closeCall(db);
-        console.log('Closed connection to the storage database.');
+        console.log('Closed connection to the storage database.\n');
     } catch (err) {
         throw new Error(err);
     }
@@ -63,19 +63,125 @@ function allCall(db, command) {
     });
 }
 
-export async function runCommand(db, command) {
-    try {  
-        console.log('Running command: ', command);
+async function runCommand(db, command) {
+    try {
+        console.log('Running command:\n' + command + '\n');
         const type = command.split(' ')[0]; // first word tells us which db method to run
 
         switch (type) {
             case 'CREATE':
                 await runCall(db, command);
                 break;
+            case 'INSERT':
+                await runCall(db, command);
+                break;
+            case 'UPDATE':
+                await runCall(db, command);
+                break;
+            case 'DELETE':
+                await runCall(db, command);
+                break;
+            case 'SELECT':
+                return await allCall(db, command);
             default:
                 throw new Error("Command type wasn't implemented!");
         }
     } catch (err) {
         throw new Error(err);
+    }
+}
+
+export default class Helpers {
+    // Keep track of the DB
+    static async openDatabase() {
+        if (this.db === undefined) {
+            try {
+                this.db = await openDB();
+            } catch (err) {
+                throw err;
+            }
+        }
+    }
+
+    // Make sure to close the DB
+    static async closeDatabase() {
+        try {
+            await closeDB(this.db);
+            this.db = undefined;
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    // Create a table in the DB with name and fields
+    // Fields is a list of strings where each string is a field
+    static async createTable(name, fields) {
+        try {
+            const formatted = fields.join(',\n\t');
+            const c = `CREATE TABLE IF NOT EXISTS ${name} (\n\t${formatted}\n);`
+            await runCommand(this.db, c);
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    // Inserts the data into a row in the table
+    // Data is a list of strings in the format: [value1], [value2], etc.
+    // values that corresponds to each column in the table
+    static async insertRow(table, data) {
+        try {
+            const formatted = data.join(', ');
+            const c = `INSERT into ${table} \nVALUES ( ${formatted} );`
+            await runCommand(this.db, c);
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    // In table, find the rows that satisfy the condition and update them
+    // Data is a list of strings in the format: [column name] = [value]
+    // Column name is basically the fields specified in table creation
+    static async updateRows(table, data, condition = false) {
+        try {
+            const formatted = data.join(', ');
+            let c = `UPDATE ${table} \nSET ${formatted}`
+            if (condition) c += `\nWHERE ${condition}`;
+            await runCommand(this.db, c + ';');
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    // In table, find the rows that satisfy the condition and delete them
+    // Omitting the condition will clear all rows
+    static async deleteRows(table, condition = false) {
+        try {
+            const c = `DELETE from ${table}`
+            if (condition) c += `\nWHERE ${condition}`;
+            await runCommand(this.db, c + ';');
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    // Returns all rows in table that match the optional condition
+    // Only include the specified columns
+    static async query(table, columns, condition = false) {
+        try {
+            let c = `SELECT ${columns} \nFROM ${table}`;
+            if (condition) c += `\nWHERE ${condition}`;
+            return await runCommand(this.db, c + ';');
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    // Run a command
+    static async run(command) {
+        try {
+            return await runCommand(this.db, command);
+        } catch (err) {
+            throw err;
+        }
     }
 }

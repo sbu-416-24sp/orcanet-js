@@ -1,26 +1,164 @@
-import { openDB, closeDB, runCommand } from './db_utils.js';
+import Helpers from './db_utils.js';
 
-// Creates the settings table if it doesn't exist
-export async function createSettingsTable() {
-    try {
-        let db = await openDB();
+// Class for the dark/light mode settings
+export class Settings {
+    static async createTable() {
+        try {
+            await Helpers.openDatabase();
 
-        const command = `
-        CREATE TABLE IF NOT EXISTS settings (
-            theme TEXT,
-            saveLocation TEXT
-        );
-        `
-        await runCommand(db, command.trim());
+            // check if table is already created so we don't insert more than once
+            const c = `SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'settings';`
+            let results = await Helpers.run(c);
+            if (results.length === 0) {
+                let table = 'settings';
+                let fields = [];
+                fields.push('theme TEXT');
+                fields.push('saveLocation TEXT');
+                await Helpers.createTable(table, fields);
 
-        await closeDB(db);
-    } catch (err) {
-        throw err;
+                // We need to initialize settings with a default row
+                let values = ["'light'", "'test'"];
+                await Helpers.insertRow(table, values);
+            }
+
+            await Helpers.closeDatabase();
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    // Because there should only be one row, only allow updates
+    static async updateRow(theme, saveLocation) {
+        try {
+            await Helpers.openDatabase();
+
+            let table = 'settings';
+            let data = [];
+            data.push('theme = ' + theme);
+            data.push('saveLocation = ' + saveLocation);
+            await Helpers.updateRows(table, data);
+
+            await Helpers.closeDatabase();
+        } catch (err) {
+            throw err;
+        }
     }
 }
 
+// Class for the COMPLETED JOBS table
+export class History {
+    static async createTable() {
+        try {
+            await Helpers.openDatabase();
+
+            let table = 'history';
+            let fields = [];
+            fields.push('fileHash TEXT');
+            fields.push('timeQueued TEXT');
+            fields.push('status TEXT');
+            fields.push('accumulatedCost TEXT');
+            fields.push('projectedCost TEXT');
+            fields.push('eta TEXT');
+            fields.push('peer TEXT');
+            await Helpers.createTable(table, fields);
+
+            await Helpers.closeDatabase();
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    // We don't update, it's either insert or delete
+    static async insertRow() {
+        return;
+    }
+
+    static async deleteRow() {
+        return;
+    }
+}
+
+// Class for the IN-PROGRESS jobs table
+export class Jobs {
+    static async createTable() {
+        try {
+            await Helpers.openDatabase();
+
+            let table = 'jobs';
+            let fields = [];
+            fields.push('jobID TEXT');
+            fields.push('fileHash TEXT');
+            fields.push('timeQueued TEXT');
+            fields.push('status TEXT');
+            fields.push('accumulatedCost TEXT');
+            fields.push('projectedCost TEXT');
+            fields.push('eta TEXT');
+            fields.push('peer TEXT');
+            await Helpers.createTable(table, fields);
+
+            await Helpers.closeDatabase();
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    static async insertRow() {
+        return;
+    }
+
+    static async updateRow() {
+        return;
+    }
+
+    static async deleteRow() {
+        return;
+    }
+}
+
+// Class for the peer data
+export class Peers {
+    static async createTable() {
+        try {
+            await Helpers.closeDatabase();
+
+            let table = 'peers';
+            let fields = [];
+            fields.push('ip TEXT');
+            fields.push('region TEXT');
+            fields.push('status TEXT');
+            fields.push('accumulatedMemory TEXT');
+            fields.push('price TEXT');
+            fields.push('reputation TEXT');
+            await Helpers.createTable(table, fields);
+
+            await Helpers.closeDatabase();
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    static async insertRow() {
+        return;
+    }
+
+    static async updateRow() {
+        return;
+    }
+
+    static async deleteRow() {
+        return;
+    }
+}
+
+
 try {
-    await createSettingsTable();
+    await Settings.createTable();
+    await Settings.updateRow('dark', 'new');
+    await Settings.updateRow('light', 'different');
+    // await Helpers.openDatabase();
+    // let a = await Helpers.query('settings', '*', "theme = dark AND saveLocation = new");
+    // console.log(a);
+    // await Helpers.closeDatabase();
 } catch (err) {
     console.log(err);
 }
