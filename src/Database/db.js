@@ -1,117 +1,127 @@
-import { createTable, insertRow, updateRow, deleteRow } from './db_utils.js';
+import Helpers from './db_utils.js';
 
 // Class for the dark/light mode settings
 export class Settings {
-    // Creates the settings table if it doesn't exist with a default row
     static async createTable() {
-        let name = 'settings';
-        let fields = [];
-        fields.push('theme TEXT');
-        fields.push('saveLoccation TEXT');
         try {
-            await createTable(name, fields);
+            await Helpers.openDatabase();
+
+            let table = 'settings';
+            let fields = [];
+            fields.push('theme TEXT');
+            fields.push('saveLocation TEXT');
+            await Helpers.createTable(table, fields);
+
+            // We need to initialize settings with a default row
+            let values = [];
+            values.push('light');
+            values.push('test');
+            await Helpers.insertRow(table, values);
+
+            await Helpers.closeDatabase();
         } catch (err) {
             throw err;
         }
     }
 
-    static async update() {
+    // Because there should only be one row, only allow updates
+    static async updateRow() {
         return;
     }
 }
 
-// Class for storing COMPLETED JOBS
+// Class for the COMPLETED JOBS table
 export class History {
-    // Creates the history table if it doesn't exist
     static async createTable() {
-        let name = 'history';
-        let fields = [];
-        fields.push('fileHash TEXT');
-        fields.push('timeQueued TEXT');
-        fields.push('status TEXT');
-        fields.push('accumulatedCost TEXT');
-        fields.push('projectedCost TEXT');
-        fields.push('eta TEXT');
-        fields.push('peer TEXT');
         try {
-            await createTable(name, fields);
+            let table = 'history';
+            let fields = [];
+            fields.push('fileHash TEXT');
+            fields.push('timeQueued TEXT');
+            fields.push('status TEXT');
+            fields.push('accumulatedCost TEXT');
+            fields.push('projectedCost TEXT');
+            fields.push('eta TEXT');
+            fields.push('peer TEXT');
+
+            await createTable(table, fields);
         } catch (err) {
             throw err;
         }
     }
 
-    static async insert() {
+    // We don't update, it's either insert or delete
+    static async insertRow() {
         return;
     }
 
-    static async remove() {
+    static async deleteRow() {
         return;
     }
 }
 
-// Class for storing IN-PROGRESS jobs
-// Needed functions: INSERT, DELETE, UPDATE
+// Class for the IN-PROGRESS jobs table
 export class Jobs {
-    // Creates the jobs table if it doesn't exist
     static async createTable() {
-        let name = 'jobs';
-        let fields = [];
-        fields.push('jobID TEXT');
-        fields.push('fileHash TEXT');
-        fields.push('timeQueued TEXT');
-        fields.push('status TEXT');
-        fields.push('accumulatedCost TEXT');
-        fields.push('projectedCost TEXT');
-        fields.push('eta TEXT');
-        fields.push('peer TEXT');
         try {
-            await createTable(name, fields);
+            let table = 'jobs';
+            let fields = [];
+            fields.push('jobID TEXT');
+            fields.push('fileHash TEXT');
+            fields.push('timeQueued TEXT');
+            fields.push('status TEXT');
+            fields.push('accumulatedCost TEXT');
+            fields.push('projectedCost TEXT');
+            fields.push('eta TEXT');
+            fields.push('peer TEXT');
+
+            await createTable(table, fields);
         } catch (err) {
             throw err;
         }
     }
 
-    static async insert() {
+    static async insertRow() {
         return;
     }
 
-    static async update() {
+    static async updateRow() {
         return;
     }
 
-    static async remove() {
+    static async deleteRow() {
         return;
     }
 }
 
-// Class for storing peer data
+// Class for the peer data
 export class Peers {
-    // Creates the peers table if it doesn't exist
     static async createTable() {
-        let name = 'peers';
-        let fields = [];
-        fields.push('ip TEXT');
-        fields.push('region TEXT');
-        fields.push('status TEXT');
-        fields.push('accumulatedMemory TEXT');
-        fields.push('price TEXT');
-        fields.push('reputation TEXT');
         try {
-            await createTable(name, fields);
+            let table = 'peers';
+            let fields = [];
+            fields.push('ip TEXT');
+            fields.push('region TEXT');
+            fields.push('status TEXT');
+            fields.push('accumulatedMemory TEXT');
+            fields.push('price TEXT');
+            fields.push('reputation TEXT');
+            
+            await createTable(table, fields);
         } catch (err) {
             throw err;
         }
     }
 
-    static async insert() {
+    static async insertRow() {
         return;
     }
 
-    static async update() {
+    static async updateRow() {
         return;
     }
 
-    static async remove() {
+    static async deleteRow() {
         return;
     }
 }
@@ -119,6 +129,11 @@ export class Peers {
 
 try {
     await Settings.createTable();
+    // await Helpers.openDatabase();
+    // await Helpers.openDatabase();
+    // await Helpers.closeDatabase();
+    // await Helpers.openDatabase();
+    // await Helpers.closeDatabase();
 } catch (err) {
     console.log(err);
 }

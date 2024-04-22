@@ -11,7 +11,7 @@ function openCall() {
 async function openDB() {
     try {
         let db = await openCall();
-        console.log('Connected to the storage database.');
+        console.log('Connected to the storage database.\n');
         return db;
     } catch (err) {
         throw new Error(err);
@@ -29,7 +29,7 @@ function closeCall(db) {
 async function closeDB(db) {
     try {
         await closeCall(db);
-        console.log('\nClosed connection to the storage database.');
+        console.log('Closed connection to the storage database.\n');
     } catch (err) {
         throw new Error(err);
     }
@@ -64,8 +64,8 @@ function allCall(db, command) {
 }
 
 async function runCommand(db, command) {
-    try {  
-        console.log('\nRunning command:\n' + command);
+    try {
+        console.log('Running command:\n' + command + '\n');
         const type = command.split(' ')[0]; // first word tells us which db method to run
 
         switch (type) {
@@ -81,6 +81,9 @@ async function runCommand(db, command) {
             case 'DELETE':
                 await runCall(db, command);
                 break;
+            case 'SELECT':
+                await allCall(db, command);
+                break;
             default:
                 throw new Error("Command type wasn't implemented!");
         }
@@ -89,58 +92,95 @@ async function runCommand(db, command) {
     }
 }
 
-// Create a table in the DB with name and fields, where field is
-// a list of strings where each string is a field
-export async function createTable(name, fields) {
-    try {
-        let db = await openDB();
-
-        let formatted = fields.join(',\n\t');
-        let c = `CREATE TABLE IF NOT EXISTS ${name} (\n\t${formatted}\n);`
-        await runCommand(db, c);
-
-        await closeDB(db);
-    } catch (err) {
-        throw err;
+export default class Helpers {
+    // Keep track of the DB
+    static async openDatabase() {
+        if (this.db === undefined) {
+            try {
+                this.db = await openDB();
+            } catch (err) {
+                throw err;
+            }
+        }
     }
-}
 
-// abc
-export async function insertRow(table, field) {
-    try {
-        let db = await openDB();
-
-        // do stuff
-
-        await closeDB(db);
-    } catch (err) {
-        throw err;
+    // Make sure to close the DB
+    static async closeDatabase() {
+        try {
+            await closeDB(this.db);
+            this.db = undefined;
+        } catch (err) {
+            throw err;
+        }
     }
-}
 
-// abc
-export async function updateRow(table, field) {
-    try {
-        let db = await openDB();
-
-        // do stuff
-
-        await closeDB(db);
-    } catch (err) {
-        throw err;
+    // Get column data so we know which columns are string types (TEXT)
+    async typeData() {
+        try {
+            // do stuff
+        } catch (err) {
+            throw err;
+        }
     }
-}
+
+    // Create a table in the DB with name and fields
+    // Fields is a list of strings where each string is a field
+    static async createTable(name, fields) {
+        try {
+            const formatted = fields.join(',\n\t');
+            const c = `CREATE TABLE IF NOT EXISTS ${name} (\n\t${formatted}\n);`
+            await runCommand(this.db, c);
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    // Inserts the data into a row in the table
+    // Data is a list of strings in the format: [value1], [value2], etc.
+    // values that corresponds to each column in the table
+    static async insertRow(table, data) {
+        try {
+            for (let i in data) { // sqlite requires quotes for text
+                if (typeof data[i] === 'string') data[i] = "'" + data[i] + "'";
+            }
+            const formatted = data.join(', ');
+            const c = `INSERT into ${table} \nVALUES ( ${formatted} );`
+            await runCommand(this.db, c);
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    // In table, find the rows that satisfy the condition and update them
+    // Data is a list of strings in the format: [column name] = [value]
+    // Column name is basically the fields specified in table creation
+    static async updateRows(table, condition, data) {
+        try {
+            for (let i in data) {
+                let value = data[i].split(' ')[2];
+                if (typeof data[i] === 'string') data[i] = "'" + data[i] + "'";
+            }
+
+            const c = `UPDATE ${table} \nSET ${formatted} \nWHERE ${condition};`
+            await runCommand(this.db, c);
+
+            for (let i in data) { // sqlite requires quotes for text
+                if (typeof data[i] === 'string') data[i] = "'" + data[i] + "'";
+            }
+            const formatted = data.join(', ');
+        } catch (err) {
+            throw err;
+        }
+    }
 
 
-// abc
-export async function deleteRow(table, field) {
-    try {
-        let db = await openDB();
-
-        // do stuff
-
-        await closeDB(db);
-    } catch (err) {
-        throw err;
+    // In table, find the rows that satisfy the condition and delete them
+    static async deleteRows(table, condition) {
+        try {
+            const c = `DELETE from ${table} \nWHERE ${condition};`
+            await runCommand(this.db, c);
+        } catch (err) {
+            throw err;
+        }
     }
 }
