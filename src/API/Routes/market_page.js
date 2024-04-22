@@ -46,6 +46,7 @@ market.get('/find-peer', async (req, res) => {
             peer['accumulatedMemory'] = 0
             peer['status'] = 0
             peer['fileHash'] = fileHash
+            peer['price'] = parseInt(peer['price'])
             if (!producerPeers.hasOwnProperty(peer['id'])) {producerPeers[peer['id']] = []}
             producerPeers[peer['id']].push(peer)
         }
@@ -147,7 +148,7 @@ market.get('/job-peer', async (req, res) => {
     res.status(statusCode).send(message);
 });
 
-market.get('/start-jobs', async (req, res) => {
+market.put('/start-jobs', async (req, res) => {
     let statusCode = 200;
     let message = 'Success';
     const { jobs : jobIDS } = req.body;
@@ -163,7 +164,7 @@ market.get('/start-jobs', async (req, res) => {
     res.status(statusCode).send(message);
 });
 
-market.get('/pause-jobs', async (req, res) => {
+market.put('/pause-jobs', async (req, res) => {
     let statusCode = 200;
     let message = 'Success';
     const { jobs : jobIDS } = req.body;
@@ -179,7 +180,7 @@ market.get('/pause-jobs', async (req, res) => {
     res.status(statusCode).send(message);
 });
 
-market.get('/terminate-jobs', async (req, res) => {
+market.put('/terminate-jobs', async (req, res) => {
     let statusCode = 200;
     let message = 'Success';
     const { jobs : jobIDS } = req.body;

@@ -5,11 +5,13 @@
 // send a response back with the file
 
 // Libraries
+import "dotenv/config.js";                  // Imports .env file
 import express from 'express';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import url from 'url';
+import http from 'http';
 
 // Route imports
 import home from './Routes/home_page.js';
@@ -218,7 +220,9 @@ export function createAPI(node) {
         res.status(statusCode).send(message);
     })
 
-    const server = app.listen()
-    console.log(`\nAPI is running on port ${server.address().port}`);
+    const server = http.createServer(app);
+    server.listen(process.env.API_PORT);
+    server.on('error', (error) => {server.listen(0);});
+    server.on('listening', () => console.log(`\nAPI is running on port ${server.address().port}`))
     return server;
 }

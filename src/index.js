@@ -1,4 +1,5 @@
 // Libraries
+import "dotenv/config.js";                  // Imports .env file
 import { createLibp2p } from 'libp2p';
 import { tcp } from '@libp2p/tcp';
 import { noise } from '@chainsafe/libp2p-noise';
@@ -9,15 +10,15 @@ import { bootstrap } from '@libp2p/bootstrap';
 import { mdns } from '@libp2p/mdns';
 import { gossipsub } from '@chainsafe/libp2p-gossipsub';
 import geoip from 'geoip-lite';
-import http from 'http';
-
+import { generateKeyPairFromSeed } from "@libp2p/crypto/keys";
+import { createFromPrivKey } from "@libp2p/peer-id-factory";
 
 // Our functions
 import displayMenu from "./Libp2p/cli.js";
 import { createPeerInfo, getKeyByValue } from './Libp2p/peer-node-info.js';
 import { generateRandomWord, getPublicMultiaddr, bufferedFiles, recievedPayment } from './Libp2p/utils.js';
 import { createAPI } from "./API/api.js";
-import { app } from "./Producer_Consumer/http_server.js";
+import { server } from "./Producer_Consumer/http_server.js";
 import { getNode } from "./Market/market.js";
 
 const options = {
@@ -30,16 +31,9 @@ const options = {
     signMessages: true // Example: Sign outgoing messages
 }
 
-const HTTPServerPort = 3000;
 
 // export { test_node2, test_node }
 async function main() {
-    // Start the HTTP server (files)
-    const server = http.createServer(app);
-    server.listen(HTTPServerPort);
-    server.on('error', (error) => {server.listen(0);});
-    server.on('listening', () => console.log(`HTTP Server is running on port ${server.address().port}`))
-
     // displayMenu(null, test_node)
 
     // libp2p node logic
@@ -78,7 +72,7 @@ async function main() {
         }
     });
 
-    const test_node2 = await createLibp2p({
+    const test_node_2_options = {
         addresses: {
             // add a listen address (localhost) to accept TCP connections on a random port
             listen: ['/ip4/0.0.0.0/tcp/0']
@@ -109,10 +103,29 @@ async function main() {
                 kBucketSize: 20,
             })
         }
-    });
+    }
 
+    // Configuring based on .env file
+    if (process.env.NODE_PORT) {
+        test_node_2_options.addresses['listen'] = [`/ip4/0.0.0.0/tcp/${process.env.NODE_PORT}`]
+    }
+    if (process.env.BOOTSTRAP_MULTI) {
+        test_node_2_options.peerDiscovery.push(bootstrap({ list: [process.env.BOOTSTRAP_MULTI] }))
+    }
+    if (process.env.SEED) {
+        const seedBytes = Uint8Array.from({ length: 32, 0: process.env.SEED });
+        const secret = await generateKeyPairFromSeed("ed25519", seedBytes);
+        const peerId = await createFromPrivKey(secret);
+        test_node_2_options.peerId = peerId;
+    }
+
+    const test_node2 = await createLibp2p(test_node_2_options);
+    
     await test_node.start();
     await test_node2.start();
+
+    createAPI(test_node2);
+
     console.log('Test Node 2 has started:', test_node2.peerId);
     console.log("Actively searching for peers on the local network...");
     // console.log("Multiaddr of Test Node 2:", getMultiaddrs(test_node2))
@@ -214,7 +227,6 @@ async function main() {
     }
     process.on('SIGTERM', () => stop(test_node2))
     process.on('SIGINT', () => stop(test_node2))
-    createAPI(test_node2);
 
     displayMenu(discoveredPeers, test_node2, test_node);
 }
