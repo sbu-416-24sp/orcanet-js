@@ -17,9 +17,7 @@ export class Settings {
                 await Helpers.createTable(table, fields);
 
                 // We need to initialize settings with a default row
-                let values = [];
-                values.push('light');
-                values.push('test');
+                let values = ["'light'", "'test'"];
                 await Helpers.insertRow(table, values);
             }
 
@@ -158,7 +156,7 @@ try {
     await Settings.updateRow('dark', 'new');
     await Settings.updateRow('light', 'different');
     // await Helpers.openDatabase();
-    // let a = await Helpers.query('settings', '*', "theme = 'light'");
+    // let a = await Helpers.query('settings', '*', "theme = dark AND saveLocation = new");
     // console.log(a);
     // await Helpers.closeDatabase();
 } catch (err) {
