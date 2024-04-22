@@ -6,17 +6,22 @@ export class Settings {
         try {
             await Helpers.openDatabase();
 
-            let table = 'settings';
-            let fields = [];
-            fields.push('theme TEXT');
-            fields.push('saveLocation TEXT');
-            await Helpers.createTable(table, fields);
+            // check if table is already created so we don't insert more than once
+            const c = `SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'settings';`
+            let results = await Helpers.run(c);
+            if (results.length === 0) {
+                let table = 'settings';
+                let fields = [];
+                fields.push('theme TEXT');
+                fields.push('saveLocation TEXT');
+                await Helpers.createTable(table, fields);
 
-            // We need to initialize settings with a default row
-            let values = [];
-            values.push('light');
-            values.push('test');
-            await Helpers.insertRow(table, values);
+                // We need to initialize settings with a default row
+                let values = [];
+                values.push('light');
+                values.push('test');
+                await Helpers.insertRow(table, values);
+            }
 
             await Helpers.closeDatabase();
         } catch (err) {
@@ -25,8 +30,20 @@ export class Settings {
     }
 
     // Because there should only be one row, only allow updates
-    static async updateRow() {
-        return;
+    static async updateRow(theme, saveLocation) {
+        try {
+            await Helpers.openDatabase();
+
+            let table = 'settings';
+            let data = [];
+            data.push('theme = ' + theme);
+            data.push('saveLocation = ' + saveLocation);
+            await Helpers.updateRows(table, data);
+
+            await Helpers.closeDatabase();
+        } catch (err) {
+            throw err;
+        }
     }
 }
 
@@ -34,6 +51,8 @@ export class Settings {
 export class History {
     static async createTable() {
         try {
+            await Helpers.openDatabase();
+
             let table = 'history';
             let fields = [];
             fields.push('fileHash TEXT');
@@ -43,8 +62,9 @@ export class History {
             fields.push('projectedCost TEXT');
             fields.push('eta TEXT');
             fields.push('peer TEXT');
+            await Helpers.createTable(table, fields);
 
-            await createTable(table, fields);
+            await Helpers.closeDatabase();
         } catch (err) {
             throw err;
         }
@@ -64,6 +84,8 @@ export class History {
 export class Jobs {
     static async createTable() {
         try {
+            await Helpers.openDatabase();
+
             let table = 'jobs';
             let fields = [];
             fields.push('jobID TEXT');
@@ -74,8 +96,9 @@ export class Jobs {
             fields.push('projectedCost TEXT');
             fields.push('eta TEXT');
             fields.push('peer TEXT');
+            await Helpers.createTable(table, fields);
 
-            await createTable(table, fields);
+            await Helpers.closeDatabase();
         } catch (err) {
             throw err;
         }
@@ -98,6 +121,8 @@ export class Jobs {
 export class Peers {
     static async createTable() {
         try {
+            await Helpers.closeDatabase();
+
             let table = 'peers';
             let fields = [];
             fields.push('ip TEXT');
@@ -106,8 +131,9 @@ export class Peers {
             fields.push('accumulatedMemory TEXT');
             fields.push('price TEXT');
             fields.push('reputation TEXT');
-            
-            await createTable(table, fields);
+            await Helpers.createTable(table, fields);
+
+            await Helpers.closeDatabase();
         } catch (err) {
             throw err;
         }
@@ -129,10 +155,11 @@ export class Peers {
 
 try {
     await Settings.createTable();
+    await Settings.updateRow('dark', 'new');
+    await Settings.updateRow('light', 'different');
     // await Helpers.openDatabase();
-    // await Helpers.openDatabase();
-    // await Helpers.closeDatabase();
-    // await Helpers.openDatabase();
+    // let a = await Helpers.query('settings', '*', "theme = 'light'");
+    // console.log(a);
     // await Helpers.closeDatabase();
 } catch (err) {
     console.log(err);

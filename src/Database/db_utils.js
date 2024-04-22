@@ -82,8 +82,7 @@ async function runCommand(db, command) {
                 await runCall(db, command);
                 break;
             case 'SELECT':
-                await allCall(db, command);
-                break;
+                return await allCall(db, command);
             default:
                 throw new Error("Command type wasn't implemented!");
         }
@@ -93,6 +92,38 @@ async function runCommand(db, command) {
 }
 
 export default class Helpers {
+    // Get column data for a table so we know which columns are string types
+    // sqlite requires single quotes for TEXT
+    // set wantDict to true if you care about column names, false otherwise
+    static async #typeData(table, wantDict) {
+        try {
+            let dataTable = "pragma_table_info('" + table + "')";
+            let data = await Helpers.query(dataTable, 'name, type');
+            if (wantDict) {
+                let dict = new Object();
+                for (let column of data) {
+                    dict[column.name] = column.type;
+                }
+                return dict;
+            }
+            else {
+                let arr = [];
+                for (let column of data) {
+                    arr.push(column.type);
+                }
+                return arr;
+            }   
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    // parse a condition with proper single quotes for TEXT fields
+    static async #parse(condition) {
+        // MUST DO
+        return condition;
+    }
+
     // Keep track of the DB
     static async openDatabase() {
         if (this.db === undefined) {
@@ -109,15 +140,6 @@ export default class Helpers {
         try {
             await closeDB(this.db);
             this.db = undefined;
-        } catch (err) {
-            throw err;
-        }
-    }
-
-    // Get column data so we know which columns are string types (TEXT)
-    async typeData() {
-        try {
-            // do stuff
         } catch (err) {
             throw err;
         }
@@ -140,8 +162,9 @@ export default class Helpers {
     // values that corresponds to each column in the table
     static async insertRow(table, data) {
         try {
-            for (let i in data) { // sqlite requires quotes for text
-                if (typeof data[i] === 'string') data[i] = "'" + data[i] + "'";
+            let columnTypes = await Helpers.#typeData(table, false);
+            for (let i in data) {
+                if (columnTypes[i] === 'TEXT') data[i] = "'" + data[i] + "'";
             }
             const formatted = data.join(', ');
             const c = `INSERT into ${table} \nVALUES ( ${formatted} );`
@@ -154,31 +177,50 @@ export default class Helpers {
     // In table, find the rows that satisfy the condition and update them
     // Data is a list of strings in the format: [column name] = [value]
     // Column name is basically the fields specified in table creation
-    static async updateRows(table, condition, data) {
+    static async updateRows(table, data, condition = false) {
         try {
+            let columnTypes = await Helpers.#typeData(table, true);
             for (let i in data) {
-                let value = data[i].split(' ')[2];
-                if (typeof data[i] === 'string') data[i] = "'" + data[i] + "'";
-            }
-
-            const c = `UPDATE ${table} \nSET ${formatted} \nWHERE ${condition};`
-            await runCommand(this.db, c);
-
-            for (let i in data) { // sqlite requires quotes for text
-                if (typeof data[i] === 'string') data[i] = "'" + data[i] + "'";
+                let split = data[i].split(' ');
+                let column = split[0];
+                let value = split[2];
+                if (columnTypes[column] === 'TEXT') data[i] = column + " = '" + value + "'";
             }
             const formatted = data.join(', ');
+            let c = `UPDATE ${table} \nSET ${formatted}`
+            if (condition) c += `\nWHERE ${condition}`
+            await runCommand(this.db, c + ';');
         } catch (err) {
             throw err;
         }
     }
 
-
     // In table, find the rows that satisfy the condition and delete them
     static async deleteRows(table, condition) {
         try {
-            const c = `DELETE from ${table} \nWHERE ${condition};`
+            const c = `DELETE from ${table} \nWHERE ${Helpers.#parse(condition)};`
             await runCommand(this.db, c);
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    // Returns all rows in table that match the optional condition
+    // Only include the specified columns
+    static async query(table, columns, condition = false) {
+        try {
+            let c = `SELECT ${columns} \nFROM ${table}`;
+            if (condition) c += `\nWHERE ${Helpers.#parse(condition)}`;
+            return await runCommand(this.db, c + ';');
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    // Run a command
+    static async run(command) {
+        try {
+            return await runCommand(this.db, command);
         } catch (err) {
             throw err;
         }
