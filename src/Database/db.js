@@ -12,7 +12,7 @@ import Helpers from './db_utils.js';
     The condition must be an equality
     For example { "peerID": "123jdjK3i9F3" } resolves to peerID == '123jdjK3i9F3'
 
-    JSON: the API has different types but these functions only use ints and strings
+    JSON: the API has different types but the DB only use ints and strings
     Parsing needs to be done to get the proper data that GUI requires
 
     Each class will have a query function which currently only takes in an equality clause
@@ -252,11 +252,16 @@ async function testing() {
             peer: 'test4'
         }
         await Jobs.insertRow(JSON.stringify(b));
-        let c = {
+        // let c = {
+        //     fileHash: 'test1'
+        // }
+        // await Jobs.deleteRow(JSON.stringify(c));
+        let d = {
             fileHash: 'test1'
         }
-        await Jobs.deleteRow(JSON.stringify(c));
-
+        let e = await Jobs.query(JSON.stringify(d));
+        console.log(e);
+        
         // await Helpers.openDatabase();
         // let a = await Helpers.query('settings', '*', "theme = dark AND saveLocation = new");
         // let a = await Helpers.columnData('settings');
