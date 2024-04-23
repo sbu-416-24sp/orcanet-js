@@ -91,6 +91,12 @@ async function runCommand(db, command) {
     }
 }
 
+// adds two single quotes in front and at the end of a string
+// this is the proper format for fields of type TEXT
+function textify(string) {
+    return `'${string}'`;
+}
+
 export default class Helpers {
     // Keep track of the DB
     static async openDatabase() {
@@ -180,6 +186,53 @@ export default class Helpers {
     static async run(command) {
         try {
             return await runCommand(this.db, command);
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    // Gets the column names of the specific file and returns them in an array
+    static async #columnData(table) {
+        try {
+            let dataTable = "pragma_table_info('" + table + "')";
+            let data = await Helpers.query(dataTable, 'name');
+            let arr = [];
+            for (let column of data) {
+                arr.push(column.name);
+            }
+            return arr;
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    // Converts a json object into an array of values for insertion
+    static async jsonToInsert(json, table) {
+        try {
+            let cols = await Helpers.#columnData(table);
+            let values = [];
+            let dict = JSON.parse(json);
+
+            for (let c of cols) {
+                values.push(textify(dict[c]));
+            }
+            return values;
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    // Converts a json object into an array of values for updating
+    static async jsonToUpdate(json, table) {
+        try {
+            let cols = await Helpers.#columnData(table);
+            let data = [];
+            let dict = JSON.parse(json);
+
+            for (let c of cols) {
+                data.push(`${c} = ${textify(dict[c])}`);
+            }
+            return data;
         } catch (err) {
             throw err;
         }
