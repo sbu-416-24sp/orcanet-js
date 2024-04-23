@@ -7,12 +7,16 @@ import Helpers from './db_utils.js';
 
     Depending on usecase, tables will implement insert, delete, and update row
     For insertion and updating, they take in a JSON object in the same format as the API
-    For deletion, provide the single field also in JSON format
+    
+    For deletion, provide the single condition also in JSON format
+    The condition must be an equality
+    For example { "peerID": "123jdjK3i9F3" } resolves to peerID == '123jdjK3i9F3'
 
     JSON: the API has different types but these functions only use ints and strings
     Parsing needs to be done to get the proper data that GUI requires
 
-    Each class will have a query function which [FIX LATER-------=-------------------]
+    Each class will have a query function which currently only takes in an equality clause
+    similar to the example provided for deletion
 
     Every single function will return true on success or throw an error otherwise
 --------------------------------------------------------------------------------------------- */ 
@@ -46,6 +50,12 @@ async function defaultInsertRow(json, table) {
 }
 async function defaultDeleteRow(json, table) {
     try {
+        await Helpers.openDatabase();
+
+        let condition = await Helpers.jsonToCondition(json);
+        await Helpers.deleteRows(table, condition);
+
+        await Helpers.closeDatabase();
         return true;
     } catch (err) {
         throw err;
@@ -53,6 +63,12 @@ async function defaultDeleteRow(json, table) {
 }
 async function defaultQuery(json, table) {
     try {
+        await Helpers.openDatabase();
+
+        let condition = await Helpers.jsonToCondition(json);
+        await Helpers.query(table, '*', condition);
+
+        await Helpers.closeDatabase();
         return true;
     } catch (err) {
         throw err;
@@ -93,8 +109,12 @@ export class Settings {
         }
     }
 
-    static async query() {
-        return;
+    static async query(json) {
+        try {
+            return await defaultQuery(json, 'settings');
+        } catch (err) {
+            throw err;
+        }
     }
 }
 
@@ -131,12 +151,20 @@ export class History {
         }
     }
 
-    static async deleteRow() {
-        return;
+    static async deleteRow(json) {
+        try {
+            return await defaultDeleteRow(json, 'history');
+        } catch (err) {
+            throw err;
+        }
     }
 
-    static async query() {
-        return;
+    static async query(json) {
+        try {
+            return await defaultQuery(json, 'history');
+        } catch (err) {
+            throw err;
+        }
     }
 }
 
@@ -148,6 +176,7 @@ export class Jobs {
 
             let table = 'jobs';
             let fields = [];
+            fields.push('jobID INTEGER PRIMARY KEY');
             fields.push('fileHash TEXT');
             fields.push('timeQueued TEXT');
             fields.push('status TEXT');
@@ -163,15 +192,18 @@ export class Jobs {
         }
     }
 
-    static async insertRow() {
+    static async insertRow(json) {
         try {
-            return await defaultInsertRow(json, 'jobs');
+            // due to jobID's auto increment, I need to do this
+            let temp = JSON.parse(json);
+            temp['jobID'] = null;
+            return await defaultInsertRow(JSON.stringify(temp), 'jobs');
         } catch (err) {
             throw err;
         }
     }
 
-    static async updateRow() {
+    static async updateRow(json) {
         try {
             return await defaultUpdateRow(json, 'jobs');
         } catch (err) {
@@ -179,12 +211,20 @@ export class Jobs {
         }
     }
 
-    static async deleteRow() {
-        return;
+    static async deleteRow(json) {
+        try {
+            return await defaultDeleteRow(json, 'jobs');
+        } catch (err) {
+            throw err;
+        }
     }
 
-    static async query() {
-        return;
+    static async query(json) {
+        try {
+            return await defaultQuery(json, 'jobs');
+        } catch (err) {
+            throw err;
+        }
     }
 }
 
@@ -196,12 +236,17 @@ export class Peers {
 
             let table = 'peers';
             let fields = [];
-            fields.push('ip TEXT');
-            fields.push('region TEXT');
-            fields.push('status TEXT');
-            fields.push('accumulatedMemory TEXT');
-            fields.push('price TEXT');
-            fields.push('reputation TEXT');
+            // fields.push('ip TEXT');
+            // fields.push('region TEXT');
+            // fields.push('status TEXT');
+            // fields.push('accumulatedMemory TEXT');
+            // fields.push('price TEXT');
+            // fields.push('reputation TEXT');
+            fields.push('location TEXT');
+            fields.push('latency TEXT');
+            fields.push('peerID TEXT');
+            fields.push('connection TEXT');
+            fields.push('openStreams TEXT');
             await Helpers.createTable(table, fields);
 
             await Helpers.closeDatabase();
@@ -210,7 +255,7 @@ export class Peers {
         }
     }
 
-    static async insertRow() {
+    static async insertRow(json) {
         try {
             return await defaultInsertRow(json, 'peers');
         } catch (err) {
@@ -218,7 +263,7 @@ export class Peers {
         }
     }
 
-    static async updateRow() {
+    static async updateRow(json) {
         try {
             return await defaultUpdateRow(json, 'peers');
         } catch (err) {
@@ -226,19 +271,42 @@ export class Peers {
         }
     }
 
-    static async deleteRow() {
-        return;
+    static async deleteRow(json) {
+        try {
+            return await defaultDeleteRow(json, 'peers');
+        } catch (err) {
+            throw err;
+        }
     }
 
-    static async query() {
-        return;
+    static async query(json) {
+        try {
+            return await defaultQuery(json, 'peers');
+        } catch (err) {
+            throw err;
+        }
     }
 }
 
 
 try {
-    await Settings.createTable();
-    await Settings.updateRow('{"theme": "dark"}');
+    // await Settings.createTable();
+    // await Settings.updateRow('{"theme": "dark"}');
+    // await Jobs.createTable();
+    // let b = {
+    //     fileHash: 'test1',
+    //     timeQueued: 'test2',
+    //     status: 'test3',
+    //     accumulatedCost: 1,
+    //     projectedCost: 2,
+    //     eta: 3,
+    //     peer: 'test4'
+    // }
+    // await Jobs.insertRow(JSON.stringify(b));
+    // let b = {
+    //     fileHash: 'test1'
+    // }
+    // await Jobs.deleteRow(JSON.stringify(b));
     // await Helpers.openDatabase();
     // let a = await Helpers.query('settings', '*', "theme = dark AND saveLocation = new");
     // let a = await Helpers.columnData('settings');

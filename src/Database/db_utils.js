@@ -162,7 +162,7 @@ export default class Helpers {
     // Omitting the condition will clear all rows
     static async deleteRows(table, condition = false) {
         try {
-            const c = `DELETE from ${table}`
+            let c = `DELETE from ${table}`
             if (condition) c += `\nWHERE ${condition}`;
             await runCommand(this.db, c + ';');
         } catch (err) {
@@ -214,7 +214,9 @@ export default class Helpers {
             let dict = JSON.parse(json);
 
             for (let c of cols) {
-                values.push(textify(dict[c]));
+                if (dict[c] === null) values.push('NULL');
+                else if (typeof dict[c] === "string") values.push(textify(dict[c]));
+                else values.push(dict[c]);
             }
             return values;
         } catch (err) {
@@ -230,9 +232,24 @@ export default class Helpers {
             let dict = JSON.parse(json);
 
             for (let c of cols) {
-                data.push(`${c} = ${textify(dict[c])}`);
+                if (typeof dict[c] === "string") data.push(`${c} = ${textify(dict[c])}`);
+                else data.push(`${c} = ${dict[c]}`);
             }
             return data;
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    // Converts a json object into a single equality condition clause
+    static async jsonToCondition(json) {
+        try {
+            let dict = JSON.parse(json);
+
+            for (let key in dict) { // dict should only have one entry
+                if (typeof dict[key] === "string") return `${key} = ${textify(dict[key])}`;
+                else return `${key} = ${dict[key]}`;
+            }
         } catch (err) {
             throw err;
         }
