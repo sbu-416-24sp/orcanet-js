@@ -91,6 +91,127 @@ async function runCommand(db, command) {
     }
 }
 
+// Inserts the data into a row in the table
+// Data is a list of strings in the format: [value1], [value2], etc.
+// values that corresponds to each column in the table
+async function insertRow(db, table, data) {
+    try {
+        const formatted = data.join(', ');
+        const c = `INSERT into ${table} \nVALUES ( ${formatted} );`
+        await runCommand(db, c);
+    } catch (err) {
+        throw err;
+    }
+}
+
+// In table, find the rows that satisfy the condition and delete them
+// Omitting the condition will clear all rows
+async function deleteRows(db, table, condition = false) {
+    try {
+        let c = `DELETE from ${table}`
+        if (condition) c += `\nWHERE ${condition}`;
+        await runCommand(db, c + ';');
+    } catch (err) {
+        throw err;
+    }
+}
+
+// In table, find the rows that satisfy the condition and update them
+// Data is a list of strings in the format: [column name] = [value]
+// Column name is basically the fields specified in table creation
+async function updateRows(db, table, data, condition = false) {
+    try {
+        const formatted = data.join(', ');
+        let c = `UPDATE ${table} \nSET ${formatted}`
+        if (condition) c += `\nWHERE ${condition}`;
+        await runCommand(db, c + ';');
+    } catch (err) {
+        throw err;
+    }
+}
+
+// Returns all rows in table that match the optional condition
+// Only include the specified columns
+async function query(db, table, columns, condition = false) {
+    try {
+        let c = `SELECT ${columns} \nFROM ${table}`;
+        if (condition) c += `\nWHERE ${condition}`;
+        return await runCommand(db, c + ';');
+    } catch (err) {
+        throw err;
+    }
+}
+
+// Gets the column names of the specific file and returns them in an array
+async function columnData(db, table) {
+    try {
+        let dataTable = "pragma_table_info('" + table + "')";
+        let data = await query(db, dataTable, 'name');
+        let arr = [];
+        for (let column of data) {
+            arr.push(column.name);
+        }
+        return arr;
+    } catch (err) {
+        throw err;
+    }
+}
+
+// Converts a json object into an array of values for insertion
+async function jsonToInsert(db, json, table) {
+    try {
+        let cols = await columnData(db, table);
+        let values = [];
+        let dict = JSON.parse(json);
+
+        for (let c of cols) {
+            if (dict[c] === null) values.push('NULL');
+            else if (typeof dict[c] === "string") values.push(textify(dict[c]));
+            else values.push(dict[c]);
+        }
+        return values;
+    } catch (err) {
+        throw err;
+    }
+}
+
+// Converts a json object into an array of values for updating
+async function jsonToUpdate(db, json, table) {
+    try {
+        let cols = await columnData(db, table);
+        let data = [];
+        let dict = JSON.parse(json);
+
+        for (let c of cols) {
+            if (typeof dict[c] === "string") data.push(`${c} = ${textify(dict[c])}`);
+            else data.push(`${c} = ${dict[c]}`);
+        }
+        return data;
+    } catch (err) {
+        throw err;
+    }
+}
+
+// Converts a json object into a single equality condition clause
+function jsonToCondition(json) {
+    try {
+        let dict = JSON.parse(json);
+
+        for (let key in dict) { // dict should only have one entry
+            if (typeof dict[key] === "string") return `${key} = ${textify(dict[key])}`;
+            else return `${key} = ${dict[key]}`;
+        }
+    } catch (err) {
+        throw err;
+    }
+}
+
+// adds two single quotes in front and at the end of a string
+// this is the proper format for fields of type TEXT
+function textify(string) {
+    return `'${string}'`;
+}
+
 export default class Helpers {
     // Keep track of the DB
     static async openDatabase() {
@@ -125,52 +246,54 @@ export default class Helpers {
         }
     }
 
-    // Inserts the data into a row in the table
-    // Data is a list of strings in the format: [value1], [value2], etc.
-    // values that corresponds to each column in the table
-    static async insertRow(table, data) {
+    static async updateRow(json, table) {
         try {
-            const formatted = data.join(', ');
-            const c = `INSERT into ${table} \nVALUES ( ${formatted} );`
-            await runCommand(this.db, c);
+            await Helpers.openDatabase();
+
+            let data = await jsonToUpdate(this.db, json, table);
+            await updateRows(this.db, table, data);
+
+            await Helpers.closeDatabase();
+            return true;
         } catch (err) {
             throw err;
         }
     }
-
-    // In table, find the rows that satisfy the condition and update them
-    // Data is a list of strings in the format: [column name] = [value]
-    // Column name is basically the fields specified in table creation
-    static async updateRows(table, data, condition = false) {
+    static async insertRow(json, table) {
         try {
-            const formatted = data.join(', ');
-            let c = `UPDATE ${table} \nSET ${formatted}`
-            if (condition) c += `\nWHERE ${condition}`;
-            await runCommand(this.db, c + ';');
+            await Helpers.openDatabase();
+
+            let values = await jsonToInsert(this.db, json, table);
+            await insertRow(this.db, table, values);
+
+            await Helpers.closeDatabase();
+            return true;
         } catch (err) {
             throw err;
         }
     }
-
-    // In table, find the rows that satisfy the condition and delete them
-    // Omitting the condition will clear all rows
-    static async deleteRows(table, condition = false) {
+    static async deleteRow(json, table) {
         try {
-            const c = `DELETE from ${table}`
-            if (condition) c += `\nWHERE ${condition}`;
-            await runCommand(this.db, c + ';');
+            await Helpers.openDatabase();
+
+            let condition = jsonToCondition(json);
+            await deleteRows(this.db, table, condition);
+
+            await Helpers.closeDatabase();
+            return true;
         } catch (err) {
             throw err;
         }
     }
-
-    // Returns all rows in table that match the optional condition
-    // Only include the specified columns
-    static async query(table, columns, condition = false) {
+    static async query(json, table) {
         try {
-            let c = `SELECT ${columns} \nFROM ${table}`;
-            if (condition) c += `\nWHERE ${condition}`;
-            return await runCommand(this.db, c + ';');
+            await Helpers.openDatabase();
+
+            let condition = jsonToCondition(json);
+            let data = await query(this.db, table, '*', condition);
+
+            await Helpers.closeDatabase();
+            return data;
         } catch (err) {
             throw err;
         }
