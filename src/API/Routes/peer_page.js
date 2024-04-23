@@ -1,13 +1,14 @@
 import express from 'express';
+import {getProducers} from '../Wrappers/producer_consumer.js';
 
 const peer = express.Router();
 
 peer.get('/get-peer', async (req, res) => {
     let statusCode = 200;
     let message = '';
-    const { param1, param2 } = req.body;
+    const { peerID } = req.body;
     try {
-       message = 'Message'
+        message = getProducers(peerID);
     } catch (error) {
         statusCode = 500;
         message = "Error";
@@ -16,12 +17,13 @@ peer.get('/get-peer', async (req, res) => {
     res.status(statusCode).send(message);
 });
 
+//return all peers
 peer.get('/get-peers', async (req, res) => {
     let statusCode = 200;
     let message = '';
-    const { param1, param2 } = req.body;
+    const node = req.node;
     try {
-       message = 'Message'
+       message = node.getPeers();
     } catch (error) {
         statusCode = 500;
         message = "Error";
@@ -30,10 +32,13 @@ peer.get('/get-peers', async (req, res) => {
     res.status(statusCode).send(message);
 });
 
-peer.get('/remove-peer', async (req, res) => {
+
+//no implementation
+peer.post('/remove-peer', async (req, res) => {
     let statusCode = 200;
     let message = '';
-    const { param1, param2 } = req.body;
+    const { peerID } = req.body;
+    
     try {
        message = 'Message'
     } catch (error) {
