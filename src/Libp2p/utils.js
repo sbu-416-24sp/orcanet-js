@@ -12,7 +12,7 @@ export function hashFile(fileName) {
     const filePath = join(producerFilesPath, fileName);
     const fileContent = fs.readFileSync(filePath);
     const fileHash = crypto.createHash('sha256').update(fileContent).digest('hex');
-    console.log('Filehash: ', fileHash);
+    return fileHash;
 }
 
 export function generateRandomWord() {
