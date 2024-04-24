@@ -124,7 +124,7 @@ async function main() {
     await test_node.start();
     await test_node2.start();
 
-    createAPI(test_node2);
+    
 
     console.log('Test Node 2 has started:', test_node2.peerId);
     console.log("Actively searching for peers on the local network...");
@@ -132,7 +132,7 @@ async function main() {
     test_node2.services.pubsub.start()
     test_node.services.pubsub.start()
     test_node.services.pubsub.subscribe('transaction')
-
+    
     // Gossip Sub implementation 
     test_node.services.pubsub.addEventListener('message', (message) => {
         console.log(`first node, ${message.detail.topic}:`, new TextDecoder().decode(message.detail.data))
@@ -144,7 +144,7 @@ async function main() {
     const discoveredPeers = new Map()
     const ipAddresses = [];
     let local_peer_node_info = {};
-
+    createAPI(test_node2, discoveredPeers);
     test_node2.addEventListener('peer:discovery', (evt) => {
         try {
             const peerId = evt.detail.id;
@@ -227,8 +227,8 @@ async function main() {
     }
     process.on('SIGTERM', () => stop(test_node2))
     process.on('SIGINT', () => stop(test_node2))
-
     displayMenu(discoveredPeers, test_node2, test_node);
+    
 }
 
 main()

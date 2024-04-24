@@ -29,7 +29,7 @@ import { sendRequestFile, sendRequestTransaction } from '../Producer_Consumer/ht
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 const destinationDirectory = path.join(__dirname, '..', 'testProducerFiles')
 
-export function createAPI(node) {
+export function createAPI(node, discoveredPeers) {
     
     const app = express();
 
@@ -39,6 +39,7 @@ export function createAPI(node) {
     // Custom middleware to attach 'node' variable to the request object
     app.use((req, res, next) => {
         req.node = node;
+        req.discoveredPeers = discoveredPeers;
         next();
     });
 
