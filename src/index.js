@@ -120,7 +120,7 @@ async function main() {
     }
 
     const test_node2 = await createLibp2p(test_node_2_options);
-    
+
     await test_node.start();
     await test_node2.start();
 
@@ -144,7 +144,11 @@ async function main() {
     const discoveredPeers = new Map()
     const ipAddresses = [];
     let local_peer_node_info = {};
-    createAPI(test_node2, discoveredPeers);
+    test_node2.serverPorts = {
+        HTTP: server.address().port,
+        API: createAPI(test_node2, discoveredPeers)?.address()?.port
+    }
+
     test_node2.addEventListener('peer:discovery', (evt) => {
         try {
             const peerId = evt.detail.id;

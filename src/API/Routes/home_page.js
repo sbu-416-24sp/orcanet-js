@@ -43,8 +43,8 @@ home.post('/upload', async (req, res) => {
         const peerId = node.peerId.toString();
         const publicMulti = await getPublicMultiaddr(node);
         const parts = publicMulti.split('/')
-        const publicIP = parts[2]
-        const port = parseInt(parts[4]);
+        const publicIP = parts[2]   //127.0.0.1 test between local nodes
+        const port = node.serverPorts.HTTP;
         Producer.registerFile(fileHash, peerId, "username", publicIP, port, price);
     } catch (error) {
         statusCode = 500;

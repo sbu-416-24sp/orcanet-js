@@ -7,7 +7,7 @@ const market = express.Router();
 
 let producerPeers = [];     // { peerId : [Peer]}
 
-market.delete('/remove-from-history', async (req, res) => {
+market.put('/remove-from-history', async (req, res) => {
     let statusCode = 200;
     let message = 'Success';
     const { jobID } = req.query;
@@ -21,7 +21,7 @@ market.delete('/remove-from-history', async (req, res) => {
     res.status(statusCode).send(message);
 });
 
-market.delete('/clear-history', async (req, res) => {
+market.put('/clear-history', async (req, res) => {
     let statusCode = 200;
     let message = '';
     try {
@@ -43,8 +43,6 @@ market.get('/find-peer', async (req, res) => {
         const producers = await Consumer.viewProducers(fileHash);
         message = producers
         for (const peer of producers) {
-            peer['accumulatedMemory'] = 0
-            peer['status'] = 0
             peer['fileHash'] = fileHash
             peer['price'] = parseInt(peer['price'])
             if (!producerPeers.hasOwnProperty(peer['id'])) {producerPeers[peer['id']] = []}
@@ -60,18 +58,18 @@ market.get('/find-peer', async (req, res) => {
 market.put('/add-job', async (req, res) => {
     let statusCode = 200;
     let message = 'Success';
-    const { fileHash, peerId } = req.body;
+    const { fileHash, peerID } = req.body;
     const node = req.node;
 
     try {
-        for (const fileInfo of producerPeers[peerId]) {
+        for (const fileInfo of producerPeers[peerID]) {
             if (fileInfo['fileHash'] == fileHash) {
-                const jobId = peerId + fileHash;
+                const jobId = peerID + fileHash;
                 message = {jobId}
                 jobs[jobId] = {
                     fileHash, 
-                    peerId,
-                    timeQueued: Date.now(),
+                    peerID,
+                    timeQueued: new Date().toISOString(),
                     status: 'active',
                     eta: 0,
                     accumulatedCost: 0,
@@ -86,7 +84,7 @@ market.put('/add-job', async (req, res) => {
                 
                 const prodIp = fileInfo['ip']
                 const prodPort = fileInfo['port']
-                await sendRequestFile(node.peerId.toString(), prodIp, prodPort, fileHash, jobId);
+                sendRequestFile(node.peerId.toString(), prodIp, prodPort, fileHash, jobId);
                 break;
             }
         }
@@ -131,9 +129,10 @@ market.get('/job-info', async (req, res) => {
 market.get('/job-peer', async (req, res) => {
     let statusCode = 200;
     let message = '';
-    const { jobID, peerID } = req.query;
+    const { jobID } = req.query;
     try {
-        const fileHash = jobID.slice(peerID.length);
+        const peerID = jobs[jobID]['peerID'];
+        const fileHash = jobs[jobID]['fileHash'];
         for (const peerInfo of producerPeers[peerID]) {
             if (peerInfo['fileHash'] == fileHash) {
                 message = peerInfo
@@ -151,10 +150,10 @@ market.get('/job-peer', async (req, res) => {
 market.put('/start-jobs', async (req, res) => {
     let statusCode = 200;
     let message = 'Success';
-    const { jobs : jobIDS } = req.body;
+    const { jobIDs } = req.body;
     try {
-       for (const jobID of jobIDS) {
-            jobs[jobID]['status'] = 'active'
+       for (const jobID of jobIDs) {
+            if (jobs[jobID]['status'] == 'paused') jobs[jobID]['status'] = 'active'
        }
     } catch (error) {
         statusCode = 500;
@@ -167,10 +166,10 @@ market.put('/start-jobs', async (req, res) => {
 market.put('/pause-jobs', async (req, res) => {
     let statusCode = 200;
     let message = 'Success';
-    const { jobs : jobIDS } = req.body;
+    const { jobIDs } = req.body;
     try {
-        for (const jobID of jobIDS) {
-            jobs[jobID]['status'] = 'paused'
+        for (const jobID of jobIDs) {
+            if (jobs[jobID]['status'] == 'active') jobs[jobID]['status'] = 'paused'
        }
     } catch (error) {
         statusCode = 500;
@@ -183,10 +182,10 @@ market.put('/pause-jobs', async (req, res) => {
 market.put('/terminate-jobs', async (req, res) => {
     let statusCode = 200;
     let message = 'Success';
-    const { jobs : jobIDS } = req.body;
+    const { jobIDs } = req.body;
     try {
-        for (const jobID of jobIDS) {
-            jobs[jobID]['status'] = 'error'
+        for (const jobID of jobIDs) {
+            if (jobs[jobID]['status'] != 'completed') jobs[jobID]['status'] = 'error'
        }
     } catch (error) {
         statusCode = 500;
