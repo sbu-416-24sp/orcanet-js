@@ -3,7 +3,7 @@ import { activities, download_speeds, upload_speeds } from '../../../Libp2p/util
 
 const stats = express.Router();
 
-stats.get('/transaction', async (req, res) => {
+stats.get('/stats/network', async (req, res) => {
    let statusCode = 200;
    let message = '';
    const { pub_key } = req.body;

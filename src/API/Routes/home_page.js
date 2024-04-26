@@ -18,7 +18,9 @@ home.get('/file/:hash/info', async (req, res) => {
     let message = '';
     const hash = req.params.hash;
     try {
-        message = await Consumer.viewProducers(hash)
+        message = {
+            listProducers: await Consumer.viewProducers(hash)
+        }
     } catch (error) {
         statusCode = 500;
         message = "Error";
@@ -45,7 +47,7 @@ home.post('/upload', async (req, res) => {
         const parts = publicMulti.split('/')
         const publicIP = parts[2]   //127.0.0.1 test between local nodes
         const port = node.serverPorts.HTTP;
-        Producer.registerFile(fileHash, peerId, "username", publicIP, port, price);
+        Producer.registerFile(fileHash, peerId, "username", publicIP, port, price || 2);
     } catch (error) {
         statusCode = 500;
         message = "Error";

@@ -28,6 +28,34 @@ npm install
 node index.js
 ```
 
+# HTTP API For GUI
+### Market Page
+* PUT /remove-from-history
+* PUT /clear-history
+* GET /find-peer
+* PUT /add-job
+* GET /job-list
+* GET /job-info
+* GET /job-peer
+* PUT /start-jobs
+* PUT /pause-jobs
+* PUT /terminate-jobs
+### Home Page
+* GET /file/:hash/info
+* POST /upload
+* DELETE /file/:hash
+### Peer Page
+* GET /get-peer
+* GET /get-peers
+* POST /remove-peer
+### Stats Page
+* GET /stats/network
+* GET /types
+* GET /activity
+### Wallet Page (In progress)
+### Mining Page (In progress)
+
+
 ## Consumer Methods
 > Description:  
 > &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Asks the market server to send all the producers currently serving the file.  

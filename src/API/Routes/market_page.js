@@ -10,7 +10,7 @@ let producerPeers = [];     // { peerId : [Peer]}
 market.put('/remove-from-history', async (req, res) => {
     let statusCode = 200;
     let message = 'Success';
-    const { jobID } = req.query;
+    const { jobID } = req.body;
     try {
         delete jobs[jobID];
     } catch (error) {
@@ -41,7 +41,9 @@ market.get('/find-peer', async (req, res) => {
 
     try {
         const producers = await Consumer.viewProducers(fileHash);
-        message = producers
+        message = {
+            peers: producers
+        }
         for (const peer of producers) {
             peer['fileHash'] = fileHash
             peer['price'] = parseInt(peer['price'])
@@ -100,7 +102,13 @@ market.put('/add-job', async (req, res) => {
 market.get('/job-list', async (req, res) => {
     let statusCode = 200;
     let message = 'Success';
-
+    const listJobs = []
+    for (const jobID of jobs) {
+        listJobs.push({
+            jobID,
+            ...jobs[jobID]
+        })
+    }
     try {
        message = {jobs}
     } catch (error) {
