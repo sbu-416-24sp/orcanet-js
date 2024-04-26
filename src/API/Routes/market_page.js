@@ -102,15 +102,15 @@ market.put('/add-job', async (req, res) => {
 market.get('/job-list', async (req, res) => {
     let statusCode = 200;
     let message = 'Success';
-    const listJobs = []
-    for (const jobID of jobs) {
-        listJobs.push({
-            jobID,
-            ...jobs[jobID]
-        })
-    }
     try {
-       message = {jobs}
+        const listJobs = []
+        for (const jobID in jobs) {
+            listJobs.push({
+                jobID,
+                ...jobs[jobID]
+            })
+        }
+        message = {jobs: listJobs}
     } catch (error) {
         statusCode = 500;
         message = "Error";
