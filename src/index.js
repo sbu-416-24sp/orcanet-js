@@ -12,11 +12,13 @@ import { gossipsub } from '@chainsafe/libp2p-gossipsub';
 import geoip from 'geoip-lite';
 import { generateKeyPairFromSeed } from "@libp2p/crypto/keys";
 import { createFromPrivKey } from "@libp2p/peer-id-factory";
+import { identify } from '@libp2p/identify'
+import { mplex } from '@libp2p/mplex'
 
 // Our functions
 import displayMenu from "./Libp2p/cli.js";
 import { createPeerInfo, getKeyByValue } from './Libp2p/peer-node-info.js';
-import { generateRandomWord, getPublicMultiaddr, bufferedFiles, recievedPayment } from './Libp2p/utils.js';
+import { generateRandomWord, getPublicMultiaddr, bufferedFiles, recievedPayment, fetchPublicIP } from './Libp2p/utils.js';
 import { createAPI } from "./API/api.js";
 import { server } from "./Producer_Consumer/http_server.js";
 import { getNode } from "./Market/market.js";
@@ -72,17 +74,16 @@ async function main() {
         }
     });
 
+    const PUBLIC_IP = await fetchPublicIP();
     const test_node_2_options = {
         addresses: {
             // add a listen address (localhost) to accept TCP connections on a random port
-            listen: ['/ip4/0.0.0.0/tcp/0']
+            listen: [`/ip4/0.0.0.0/tcp/${process.env.NODE_PORT}`],
         },
         transports: [
             tcp()
         ],
-        streamMuxers: [
-            yamux()
-        ],
+        streamMuxers: [yamux(), mplex()],
         connectionEncryption: [
             noise()
         ],
@@ -99,18 +100,25 @@ async function main() {
         ],
         services: {
             pubsub: gossipsub(options),
-            dht: kadDHT({
+            kadDHT: kadDHT({
                 kBucketSize: 20,
-            })
+                enabled: true,
+                randomWalk: {
+                    enabled: true,            // Allows to disable discovery (enabled by default)
+                    interval: 300e3,
+                    timeout: 10e3
+                }
+            }),
+            identify: identify()
         }
     }
 
     // Configuring based on .env file
-    if (process.env.NODE_PORT) {
-        test_node_2_options.addresses['listen'] = [`/ip4/0.0.0.0/tcp/${process.env.NODE_PORT}`]
-    }
     if (process.env.BOOTSTRAP_MULTI) {
         test_node_2_options.peerDiscovery.push(bootstrap({ list: [process.env.BOOTSTRAP_MULTI] }))
+    }
+    if (process.env.DHT_MODE == "SERVER") {
+        test_node_2_options.addresses.announce = [`/ip4/${PUBLIC_IP}/tcp/${process.env.NODE_PORT}`]
     }
     if (process.env.SEED) {
         const seedBytes = Uint8Array.from({ length: 32, 0: process.env.SEED });
@@ -211,6 +219,11 @@ async function main() {
             console.log("Error occured when disconnecting", error)
         }
     });
+
+    test_node2.addEventListener('peer:connect', (evt) => {
+        const peerId = evt.detail
+        console.log('Connection established to:', peerId.toString()) // Emitted when a peer has been found
+    })
 
     const publicMulti = await getPublicMultiaddr(test_node2)
     console.log(publicMulti);

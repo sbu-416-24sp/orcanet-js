@@ -1,3 +1,4 @@
+import "dotenv/config.js";                  // Imports .env file
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import grpc from '@grpc/grpc-js';
@@ -24,7 +25,7 @@ const getNode = (n) => {
 var market_proto = grpc.loadPackageDefinition(packageDefinition).market;
 
 
-let target = "127.0.0.1:5000";
+let target = `127.0.0.1:${process.env.GRPC_PORT}`;
 
 const server = new grpc.Server();
 server.addService(market_proto.Market.service, { RegisterFile: registerFile, CheckHolders: checkHolders });
@@ -49,7 +50,7 @@ async function registerFile(call, callback) {
         console.log(`node Id checking: ${newUser.id}`);
 
         let existingUserStr;
-        const exist = node.services.dht.get(keyEncoded);
+        const exist = node.services.kadDHT.get(keyEncoded);
         for await (const queryEvent of exist) {
             existingUserStr = new TextDecoder('utf8').decode(queryEvent.value);
         }
@@ -61,7 +62,7 @@ async function registerFile(call, callback) {
 
              // First time to register file
             if (values[0] == '' || values[0] == undefined) {
-                const putv = node.services.dht.put(keyEncoded, valueEncoded);
+                const putv = node.services.kadDHT.put(keyEncoded, valueEncoded);
                 for await (const queryEvent of putv) {
                     // Handle each query event
                     // console.log('Query event from put(): ', queryEvent);
@@ -95,7 +96,7 @@ async function registerFile(call, callback) {
                         const newValueEncoded = new TextEncoder('utf8').encode(existingUserStr);
 
 
-                        const putv = node.services.dht.put(keyEncoded, newValueEncoded);
+                        const putv = node.services.kadDHT.put(keyEncoded, newValueEncoded);
                         for await (const queryEvent of putv) {
                             const message = new TextDecoder('utf8').decode(queryEvent.value);
                             console.log("value of each qeury is ", message);
@@ -107,7 +108,7 @@ async function registerFile(call, callback) {
                 else {
                     const newValue = existingUserStr+"\n"+userInfo;
                     const newValueEncoded = new TextEncoder('utf8').encode(newValue);
-                    const putv = node.services.dht.put(keyEncoded, newValueEncoded);
+                    const putv = node.services.kadDHT.put(keyEncoded, newValueEncoded);
                     for await (const queryEvent of putv) {
                         const message = new TextDecoder('utf8').decode(queryEvent.value);
                         console.log("value of each qeury is ", message);
@@ -121,15 +122,15 @@ async function registerFile(call, callback) {
     }
     catch (error) {
         console.log("First time to upload the file from err");
-        const putv = node.services.dht.put(keyEncoded, valueEncoded);
+        const putv = node.services.kadDHT.put(keyEncoded, valueEncoded);
         for await (const queryEvent of putv) {
             const message = new TextDecoder('utf8').decode(queryEvent.value);
             console.log("value of each qeury is ", message);
         }
     }
-    node.services.dht.refreshRoutingTable();
+    node.services.kadDHT.refreshRoutingTable();
 
-    const value = node.services.dht.get(keyEncoded);
+    const value = node.services.kadDHT.get(keyEncoded);
     for await (const queryEvent of value) {
         const message = new TextDecoder('utf8').decode(queryEvent.value);
         console.log("value of each qeury is ", message);
@@ -152,8 +153,8 @@ async function checkHolders(call, callback) {
 
         let message;
 
-        node.services.dht.refreshRoutingTable();
-        const value = node.services.dht.get(keyEncoded);
+        node.services.kadDHT.refreshRoutingTable();
+        const value = node.services.kadDHT.get(keyEncoded);
         for await (const queryEvent of value) {
             message = new TextDecoder('utf8').decode(queryEvent.value);
         }
