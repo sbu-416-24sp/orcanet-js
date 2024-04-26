@@ -1,5 +1,26 @@
 # Orcanet-JS
 
+## Setup
+Go to src/.env.
+
+To change default ports (optional):
+
+```
+NODE_PORT=3000
+HTTP_PORT=4000          // HTTP SERVER FOR FILE EXCHANGE
+GRPC_PORT=5000          // FOR NODE - MARKET COMMUNICATION
+API_PORT=6000           // HTTP API FOR GUI
+```
+To run multiple local nodes, required to change NODE_PORT and GRPC_PORT for each.
+
+To run node as a DHT client or server modify DHT_MODE:
+```
+DHT_MODE="SERVER"       // or "CLIENT"
+```
+To add a bootstrap multiaddress, set BOOTSTRAP_MULTI:
+```
+BOOTSTRAP_MULTI="/ip4/72.229.181.210/tcp/5555/p2p12D3KooWFQ8XWQPfjVUPFkvkLY6R8snUQDgFshV1Fvobq7qHk88W"
+```
 ## How to call/run
 ```
 cd src
