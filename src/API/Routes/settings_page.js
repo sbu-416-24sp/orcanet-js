@@ -1,13 +1,20 @@
 import express from 'express';
+import { Settings } from '../../Database/db.js';
 
 const settings = express.Router();
 
-settings.get('/set-transfer-settings', async (req, res) => {
+settings.put('/set-transfer-settings', async (req, res) => {
     let statusCode = 200;
     let message = '';
-    const { theme, saveLocation } = req.body;
+    const { theme, server } = req.body;
     try {
-       message = 'Message'
+       message = 'Success';
+       let json = {
+        theme: theme,
+        server: server
+       }
+       await Settings.createTable();
+       await Settings.updateRow(json);
     } catch (error) {
         statusCode = 500;
         message = "Error";
@@ -19,9 +26,11 @@ settings.get('/set-transfer-settings', async (req, res) => {
 settings.get('/get-transfer-settings', async (req, res) => {
     let statusCode = 200;
     let message = '';
-    const { theme, saveLocation } = req.body;
     try {
-       message = 'Message'
+       let json = {}; // empty cause we just need to get the single row
+       await Settings.createTable();
+       message = await Settings.query(json);
+       message = message[0];
     } catch (error) {
         statusCode = 500;
         message = "Error";

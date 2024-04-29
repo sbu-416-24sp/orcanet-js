@@ -162,7 +162,8 @@ async function jsonToInsert(db, json, table) {
     try {
         let cols = await columnData(db, table);
         let values = [];
-        let dict = JSON.parse(json);
+        // let dict = JSON.parse(json);
+        let dict = json;
 
         for (let c of cols) {
             if (dict[c] === null) values.push('NULL');
@@ -180,11 +181,12 @@ async function jsonToUpdate(db, json, table) {
     try {
         let cols = await columnData(db, table);
         let data = [];
-        let dict = JSON.parse(json);
+        // let dict = JSON.parse(json);
+        let dict = json;
 
         for (let c of cols) {
             if (typeof dict[c] === "string") data.push(`${c} = ${textify(dict[c])}`);
-            else data.push(`${c} = ${dict[c]}`);
+            else if (dict[c] !== undefined) data.push(`${c} = ${dict[c]}`);
         }
         return data;
     } catch (err) {
@@ -195,7 +197,8 @@ async function jsonToUpdate(db, json, table) {
 // Converts a json object into a single equality condition clause
 function jsonToCondition(json) {
     try {
-        let dict = JSON.parse(json);
+        // let dict = JSON.parse(json);
+        let dict = json;
 
         for (let key in dict) { // dict should only have one entry
             if (typeof dict[key] === "string") return `${key} = ${textify(dict[key])}`;
@@ -240,7 +243,7 @@ export default class Helpers {
         try {
             const formatted = fields.join(',\n\t');
             const c = `CREATE TABLE IF NOT EXISTS ${name} (\n\t${formatted}\n);`
-            await runCommand(this.db, c);
+            return await Helpers.run(c);
         } catch (err) {
             throw err;
         }
@@ -302,7 +305,10 @@ export default class Helpers {
     // Run a command
     static async run(command) {
         try {
-            return await runCommand(this.db, command);
+            await Helpers.openDatabase();
+            let ret = await runCommand(this.db, command);
+            await Helpers.closeDatabase();
+            return ret;
         } catch (err) {
             throw err;
         }

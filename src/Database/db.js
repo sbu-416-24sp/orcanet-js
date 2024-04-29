@@ -10,7 +10,7 @@ import Helpers from './db_utils.js';
     
     For deletion, provide the single condition also in JSON format
     The condition must be an equality
-    For example { "peerID": "123jdjK3i9F3" } resolves to peerID == '123jdjK3i9F3'
+    For example { peerID: "123jdjK3i9F3" } resolves to peerID == '123jdjK3i9F3'
 
     JSON: the API has different types but the DB only use ints and strings
     Parsing needs to be done to get the proper data that GUI requires
@@ -26,21 +26,23 @@ import Helpers from './db_utils.js';
 export class Settings {
     static async createTable() {
         try {
-            await Helpers.openDatabase();
-
             // check if table is already created so we don't insert more than once
             const c = `SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'settings';`
             let results = await Helpers.run(c);
             if (results.length === 0) {
                 let table = 'settings';
-                let fields = ['theme TEXT'];
+                let fields = [];
+                fields.push('theme TEXT');
+                fields.push('server TEXT');
                 await Helpers.createTable(table, fields);
 
                 // We need to initialize settings with a default row
-                await Helpers.insertRow(table, ["'light'"]);
+                let json = {
+                    theme: 'light',
+                    server: 'go'
+                };
+                await Helpers.insertRow(json, table);
             }
-
-            await Helpers.closeDatabase();
             return true;
         } catch (err) {
             throw err;
@@ -239,28 +241,30 @@ export class Peers {
 async function testing() {
     try {
         await Settings.createTable();
-        await Settings.updateRow('{"theme": "dark"}');
+        let json = {};
+        let a = await Settings.query(json);
+        console.log(a);
 
-        await Jobs.createTable();
-        let b = {
-            fileHash: 'test1',
-            timeQueued: 'test2',
-            status: 'test3',
-            accumulatedCost: 1,
-            projectedCost: 2,
-            eta: 3,
-            peer: 'test4'
-        }
-        await Jobs.insertRow(JSON.stringify(b));
-        // let c = {
+        // await Jobs.createTable();
+        // let b = {
+        //     fileHash: 'test1',
+        //     timeQueued: 'test2',
+        //     status: 'test3',
+        //     accumulatedCost: 1,
+        //     projectedCost: 2,
+        //     eta: 3,
+        //     peer: 'test4'
+        // }
+        // await Jobs.insertRow(JSON.stringify(b));
+        // // let c = {
+        // //     fileHash: 'test1'
+        // // }
+        // // await Jobs.deleteRow(JSON.stringify(c));
+        // let d = {
         //     fileHash: 'test1'
         // }
-        // await Jobs.deleteRow(JSON.stringify(c));
-        let d = {
-            fileHash: 'test1'
-        }
-        let e = await Jobs.query(JSON.stringify(d));
-        console.log(e);
+        // let e = await Jobs.query(JSON.stringify(d));
+        // console.log(e);
         
         // await Helpers.openDatabase();
         // let a = await Helpers.query('settings', '*', "theme = dark AND saveLocation = new");
@@ -271,4 +275,4 @@ async function testing() {
         console.log(err);
     }
 }
-await testing();
+// await testing();
