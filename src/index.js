@@ -14,6 +14,7 @@ import { generateKeyPairFromSeed } from "@libp2p/crypto/keys";
 import { createFromPrivKey } from "@libp2p/peer-id-factory";
 import { identify } from '@libp2p/identify'
 import { mplex } from '@libp2p/mplex'
+import { perf } from '@libp2p/perf'
 
 // Our functions
 import displayMenu from "./Libp2p/cli.js";
@@ -71,6 +72,7 @@ async function main() {
             ping: ping({
                 protocolPrefix: 'ipfs',
             }),
+            perf: perf()
         }
     });
 
@@ -109,7 +111,8 @@ async function main() {
                     timeout: 10e3
                 }
             }),
-            identify: identify()
+            identify: identify(),
+            perf: perf()
         }
     }
 
@@ -154,31 +157,36 @@ async function main() {
         API: createAPI(test_node2, discoveredPeers)?.address()?.port
     }
 
-    test_node2.addEventListener('peer:discovery', (evt) => {
+    test_node2.addEventListener('peer:discovery', async (evt) => {
         try {
             const peerId = evt.detail.id;
             console.log(`Peer ${peerId} has disconnected`)
             const multiaddrs = evt.detail.multiaddrs;
 
-            ipAddresses.length = 0;
-
-            multiaddrs.forEach(ma => {
+            let latency = 0;
+            if (multiaddrs) {
+                const ma = multiaddrs[0]
                 const multiaddrString = ma.toString();
                 const ipRegex = /\/ip4\/([^\s/]+)/;
                 const match = multiaddrString.match(ipRegex);
                 const ipAddress = match && match[1];
+    
+                ipAddresses.push(ipAddress);
 
-                if(ipAddress) {
-                    ipAddresses.push(ipAddress);
+                for await (const output of test_node2.services.perf.measurePerformance(ma, 0,0)) {
+                    latency = output.timeSeconds;
                 }
-            });
+            }
 
             let peerInfo = new Object();
 
-            ipAddresses.forEach(ip => {
+            if (ipAddresses) {
+                let ip = ipAddresses[0]
+                if (ip.startsWith("127.") || ip.startsWith("10.")) { ip = PUBLIC_IP}
                 const location = geoip.lookup(ip);
-                peerInfo = createPeerInfo(location, peerId, multiaddrs[1], peerId.publicKey);
-            });
+                peerInfo = createPeerInfo(location, peerId, multiaddrs[0], peerId.publicKey);
+                peerInfo['Latency'] = latency;
+            }
 
             // console.log(evt.detail);
             // Get non 127... multiaddr and convert the object into a string for parsing
