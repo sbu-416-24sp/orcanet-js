@@ -247,7 +247,7 @@ async function main() {
 
     const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
     const originalDir = process.cwd();
-    const bcoinDir = path.resolve(__dirname, '../../416_Orcacoin-JS/bin/');
+    const bcoinDir = path.resolve(__dirname, '416_Orcacoin-JS/bin/');
 
     function stopBcoin() {
         process.chdir(bcoinDir);
