@@ -15,11 +15,15 @@ import { createFromPrivKey } from "@libp2p/peer-id-factory";
 import { identify } from '@libp2p/identify'
 import { mplex } from '@libp2p/mplex'
 import { perf } from '@libp2p/perf'
+import axios from 'axios';
+import {exec, execSync} from 'child_process';
+import path from 'path'
+import url from 'url';
 
 // Our functions
 import displayMenu from "./Libp2p/cli.js";
 import { createPeerInfo, getKeyByValue } from './Libp2p/peer-node-info.js';
-import { generateRandomWord, getPublicMultiaddr, bufferedFiles, recievedPayment, fetchPublicIP } from './Libp2p/utils.js';
+import { generateRandomWord, getPublicMultiaddr, bufferedFiles, recievedPayment, fetchPublicIP, walletInfo } from './Libp2p/utils.js';
 import { createAPI } from "./API/api.js";
 import { server } from "./Producer_Consumer/http_server.js";
 import { getNode } from "./Market/market.js";
@@ -240,12 +244,64 @@ async function main() {
     })
 
     getNode(test_node2);
-    
+
+    const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
+    const originalDir = process.cwd();
+    const bcoinDir = path.resolve(__dirname, '../../416_Orcacoin-JS/bin/');
+
+    function stopBcoin() {
+        process.chdir(bcoinDir);
+        const command = `node ./bcoin-cli --network=testnet rpc stop`;
+
+        try {
+            execSync(command);
+            console.log('stopped bcoin')
+        } catch (error) {
+            console.error(`Error executing command: ${error}`);
+        }
+        process.chdir(originalDir);
+    }
+
+    async function startBcoin() {
+        process.chdir(bcoinDir);
+        let command = `sh ./bcoin --network=testnet --daemon`;
+
+        try {
+            execSync(command);
+            console.log('Started bcoin daemon');
+            
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            axios.get('http://127.0.0.1:19124/wallet/primary/account/default')
+            .then(response => {
+                walletInfo['walletID'] = response.data?.receiveAddress
+
+                if (walletInfo['walletID']) {
+                    stopBcoin()
+                    command = `sh ./bcoin --network=testnet --daemon --coinbase-address=${walletInfo['walletID']}`
+
+                    process.chdir(bcoinDir);
+                    execSync(command);
+                    console.log('executed command for allowing mining')
+                }
+            })
+            .catch(error => {
+                console.error('There was a problem with the request:', error);
+            }).finally(() => process.chdir(originalDir));
+        } catch (error) {
+            console.error(`Error executing command: ${error}`);
+            process.chdir(originalDir);
+        }
+    }
+
+    startBcoin()
+
     const stop = async (node) => {
         // stop libp2p
         await node.stop()
         console.log('\nNode has stopped: ', node.peerId)
-        process.exit(0)
+
+        stopBcoin();
+        process.exit(0);
     }
     process.on('SIGTERM', () => stop(test_node2))
     process.on('SIGINT', () => stop(test_node2))
