@@ -122,6 +122,7 @@ let jobs = {};              // { jobId : Job}
 let upload_speeds = {};
 let download_speeds = {};
 let activities = {uploads: [], downloads: []}
+let walletInfo = {};
 
 const MAX_CHUNK_SIZE = 1024 * 62;
-export {recievedPayment, bufferedFiles, fileRequests, MAX_CHUNK_SIZE, jobs, upload_speeds, download_speeds, activities}
+export {recievedPayment, bufferedFiles, fileRequests, MAX_CHUNK_SIZE, jobs, upload_speeds, download_speeds, activities, walletInfo}

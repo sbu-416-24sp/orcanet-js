@@ -25,10 +25,11 @@ export const createPeerInfo = (location, peerId, multiaddr, publicKey) => {
     } : null;
 
     const peerInfo = {
-        peerId: peerId,
-        multiaddr: multiaddr,
-        publicKey: publicKey,
-        location: locationInfo
+        PeerID: peerId,
+        OpenStreams: multiaddr,
+        Connection: 'ipv4',
+        Location: locationInfo.country + ', ' + locationInfo.state,
+        // publicKey: publicKey
     };
 
     return peerInfo;

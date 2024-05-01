@@ -14,11 +14,16 @@ import { generateKeyPairFromSeed } from "@libp2p/crypto/keys";
 import { createFromPrivKey } from "@libp2p/peer-id-factory";
 import { identify } from '@libp2p/identify'
 import { mplex } from '@libp2p/mplex'
+import { perf } from '@libp2p/perf'
+import axios from 'axios';
+import {exec, execSync} from 'child_process';
+import path from 'path'
+import url from 'url';
 
 // Our functions
 import displayMenu from "./Libp2p/cli.js";
 import { createPeerInfo, getKeyByValue } from './Libp2p/peer-node-info.js';
-import { generateRandomWord, getPublicMultiaddr, bufferedFiles, recievedPayment, fetchPublicIP } from './Libp2p/utils.js';
+import { generateRandomWord, getPublicMultiaddr, bufferedFiles, recievedPayment, fetchPublicIP, walletInfo } from './Libp2p/utils.js';
 import { createAPI } from "./API/api.js";
 import { server } from "./Producer_Consumer/http_server.js";
 import { getNode } from "./Market/market.js";
@@ -71,6 +76,7 @@ async function main() {
             ping: ping({
                 protocolPrefix: 'ipfs',
             }),
+            perf: perf()
         }
     });
 
@@ -109,7 +115,8 @@ async function main() {
                     timeout: 10e3
                 }
             }),
-            identify: identify()
+            identify: identify(),
+            perf: perf()
         }
     }
 
@@ -154,31 +161,36 @@ async function main() {
         API: createAPI(test_node2, discoveredPeers)?.address()?.port
     }
 
-    test_node2.addEventListener('peer:discovery', (evt) => {
+    test_node2.addEventListener('peer:discovery', async (evt) => {
         try {
             const peerId = evt.detail.id;
             console.log(`Peer ${peerId} has disconnected`)
             const multiaddrs = evt.detail.multiaddrs;
 
-            ipAddresses.length = 0;
-
-            multiaddrs.forEach(ma => {
+            let latency = 0;
+            if (multiaddrs) {
+                const ma = multiaddrs[0]
                 const multiaddrString = ma.toString();
                 const ipRegex = /\/ip4\/([^\s/]+)/;
                 const match = multiaddrString.match(ipRegex);
                 const ipAddress = match && match[1];
+    
+                ipAddresses.push(ipAddress);
 
-                if(ipAddress) {
-                    ipAddresses.push(ipAddress);
+                for await (const output of test_node2.services.perf.measurePerformance(ma, 0,0)) {
+                    latency = output.timeSeconds;
                 }
-            });
+            }
 
             let peerInfo = new Object();
 
-            ipAddresses.forEach(ip => {
+            if (ipAddresses) {
+                let ip = ipAddresses[0]
+                if (ip.startsWith("127.") || ip.startsWith("10.")) { ip = PUBLIC_IP}
                 const location = geoip.lookup(ip);
-                peerInfo = createPeerInfo(location, peerId, multiaddrs[1], peerId.publicKey);
-            });
+                peerInfo = createPeerInfo(location, peerId, multiaddrs[0], peerId.publicKey);
+                peerInfo['Latency'] = latency;
+            }
 
             // console.log(evt.detail);
             // Get non 127... multiaddr and convert the object into a string for parsing
@@ -232,12 +244,64 @@ async function main() {
     })
 
     getNode(test_node2);
-    
+
+    const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
+    const originalDir = process.cwd();
+    const bcoinDir = path.resolve(__dirname, '416_Orcacoin-JS/bin/');
+
+    function stopBcoin() {
+        process.chdir(bcoinDir);
+        const command = `node ./bcoin-cli --network=testnet rpc stop`;
+
+        try {
+            execSync(command);
+            console.log('stopped bcoin')
+        } catch (error) {
+            console.error(`Error executing command: ${error}`);
+        }
+        process.chdir(originalDir);
+    }
+
+    async function startBcoin() {
+        process.chdir(bcoinDir);
+        let command = `sh ./bcoin --network=testnet --daemon`;
+
+        try {
+            execSync(command);
+            console.log('Started bcoin daemon');
+            
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            axios.get('http://127.0.0.1:19124/wallet/primary/account/default')
+            .then(response => {
+                walletInfo['walletID'] = response.data?.receiveAddress
+
+                if (walletInfo['walletID']) {
+                    stopBcoin()
+                    command = `sh ./bcoin --network=testnet --daemon --coinbase-address=${walletInfo['walletID']}`
+
+                    process.chdir(bcoinDir);
+                    execSync(command);
+                    console.log('executed command for allowing mining')
+                }
+            })
+            .catch(error => {
+                console.error('There was a problem with the request:', error);
+            }).finally(() => process.chdir(originalDir));
+        } catch (error) {
+            console.error(`Error executing command: ${error}`);
+            process.chdir(originalDir);
+        }
+    }
+
+    startBcoin()
+
     const stop = async (node) => {
         // stop libp2p
         await node.stop()
         console.log('\nNode has stopped: ', node.peerId)
-        process.exit(0)
+
+        stopBcoin();
+        process.exit(0);
     }
     process.on('SIGTERM', () => stop(test_node2))
     process.on('SIGINT', () => stop(test_node2))

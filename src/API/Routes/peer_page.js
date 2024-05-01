@@ -5,7 +5,7 @@ const peer = express.Router();
 const getKeyByValue = (map, value) => {
     const peerIdToRemove = value;
     for (let [key, val] of map.entries()) {
-        let peerId = val.peerId;
+        let peerId = val.PeerID;
         let peerIdString = peerId.toString();
         // console.log(peerIdString);
         // console.log(peerIdToRemove);
@@ -21,7 +21,7 @@ function findPeerInfoByPeerId(peerMap, peerId) {
     for (const [randomWord, info] of peerMap.entries()) {
         // console.log(info.peerId)
         // console.log(peerId)
-        if (info.peerId.toString() === peerId) {
+        if (info.PeerID.toString() === peerId) {
             // console.log("check this: ")
             // console.log(info)
             // console.log(randomWord)
